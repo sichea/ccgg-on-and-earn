@@ -1,9 +1,5 @@
-import EventGame from '../components/EventGame';
+import TaskList from '@/components/TaskList';
 
 export default function Home() {
-  return (
-    <main>
-      <EventGame />
-    </main>
-  );
+  return <TaskList />;
 }
