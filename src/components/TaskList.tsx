@@ -1,6 +1,18 @@
 'use client';
 
-import { ExternalLink, Link2, MessageSquare, Twitter } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  ExternalLink, 
+  Link2, 
+  MessageSquare, 
+  Twitter, 
+  Edit2, 
+  Trash2, 
+  Plus, 
+  X, 
+  Check 
+} from 'lucide-react';
+import { isAdminUser } from '@/config/admin';
 
 interface Task {
   id: string;
@@ -12,62 +24,60 @@ interface Task {
   };
   platform: 'twitter' | 'discord' | 'telegram' | 'other';
   action: 'Visit' | 'Join' | 'Follow' | 'Fly' | 'Claim';
-}
-
-interface TaskGroup {
-  title: string;
-  tasks: Task[];
+  category: 'CCGG' | 'IP Productions';
 }
 
 const TaskList = () => {
-  const taskGroups: TaskGroup[] = [
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  // 관리자 권한 확인
+  useEffect(() => {
+    const webApp = window.Telegram?.WebApp;
+    if (webApp?.initDataUnsafe?.user?.id) {
+      const userId = webApp.initDataUnsafe.user.id;
+      setIsAdmin(isAdminUser(userId));
+    }
+  }, []);
+
+  // 초기 태스크 데이터
+  const [tasks, setTasks] = useState<Task[]>([
     {
-      title: 'CCGG',
-      tasks: [
-        {
-          id: '1',
-          title: 'CCGG 텔레그램 채널 구독',
-          link: 'https://t.me/ccgguild',
-          reward: { points: 100, coins: 30 },
-          platform: 'telegram',
-          action: 'Join'
-        },
-        {
-          id: '2',
-          title: 'CCGG 디스코드 채널 참여',
-          reward: { points: 150, coins: 45 },
-          platform: 'discord',
-          action: 'Join'
-        },
-        {
-          id: '3',
-          title: 'CCGG 트위터 팔로우',
-          reward: { points: 100, coins: 30 },
-          platform: 'twitter',
-          action: 'Follow'
-        }
-      ]
+      id: '1',
+      title: 'CCGG 텔레그램 채널 구독',
+      link: 'https://t.me/ccgguild',
+      reward: { points: 100, coins: 30 },
+      platform: 'telegram',
+      action: 'Join',
+      category: 'CCGG'
     },
     {
-      title: 'IP Productions',
-      tasks: [
-        {
-          id: '4',
-          title: 'Partner A 트위터 팔로우',
-          reward: { points: 80, coins: 25 },
-          platform: 'twitter',
-          action: 'Follow'
-        },
-        {
-          id: '5',
-          title: 'Partner B 디스코드 참여',
-          reward: { points: 120, coins: 35 },
-          platform: 'discord',
-          action: 'Join'
-        }
-      ]
+      id: '2',
+      title: 'CCGG 디스코드 채널 참여',
+      reward: { points: 150, coins: 45 },
+      platform: 'discord',
+      action: 'Join',
+      category: 'CCGG'
+    },
+    {
+      id: '3',
+      title: 'Partner A 트위터 팔로우',
+      reward: { points: 80, coins: 25 },
+      platform: 'twitter',
+      action: 'Follow',
+      category: 'IP Productions'
     }
-  ];
+  ]);
+
+  const [formData, setFormData] = useState<Omit<Task, 'id'>>({
+    title: '',
+    platform: 'twitter',
+    category: 'CCGG',
+    link: '',
+    reward: { points: 0, coins: 0 },
+    action: 'Join'
+  });
 
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
@@ -88,39 +98,263 @@ const TaskList = () => {
     }
   };
 
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setFormData({
+      title: task.title,
+      platform: task.platform,
+      category: task.category,
+      link: task.link || '',
+      reward: { ...task.reward },
+      action: task.action
+    });
+    setIsFormOpen(true);
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    setTasks(tasks.filter(task => task.id !== taskId));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (editingTask) {
+      // 태스크 수정
+      setTasks(tasks.map(task => 
+        task.id === editingTask.id 
+          ? { ...task, ...formData }
+          : task
+      ));
+    } else {
+      // 새 태스크 추가
+      const newTask: Task = {
+        id: Date.now().toString(),
+        ...formData
+      };
+      setTasks([...tasks, newTask]);
+    }
+
+    // 폼 초기화
+    setIsFormOpen(false);
+    setEditingTask(null);
+    setFormData({
+      title: '',
+      platform: 'twitter',
+      category: 'CCGG',
+      link: '',
+      reward: { points: 0, coins: 0 },
+      action: 'Join'
+    });
+  };
+
+  // 카테고리별로 태스크 그룹화
+  const groupedTasks = tasks.reduce<Record<string, Task[]>>((acc, task) => {
+    if (!acc[task.category]) {
+      acc[task.category] = [];
+    }
+    acc[task.category].push(task);
+    return acc;
+  }, {});
+
   return (
     <div className="bg-gray-900 min-h-screen pb-20">
       <div className="p-4">
-        {taskGroups.map((group, index) => (
-          <div key={index} className="mb-6">
-            <div className="text-white text-lg mb-2">{group.title}</div>
-            {group.tasks.map(task => (
-              <div 
-                key={task.id} 
-                className="bg-gray-800 rounded-lg p-4 mb-3 flex justify-between items-center"
-              >
-                <div className="flex items-center">
-                  <div className="mr-3">
-                    {getPlatformIcon(task.platform)}
+        {/* 관리자 컨트롤 */}
+        {isAdmin && (
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-white text-lg">Task 관리</h2>
+            <button
+              onClick={() => setIsFormOpen(true)}
+              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            >
+              <Plus className="w-4 h-4" />
+              태스크 추가
+            </button>
+          </div>
+        )}
+
+        {/* 태스크 추가/수정 폼 */}
+        {isFormOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-white text-lg">
+                  {editingTask ? '태스크 수정' : '새 태스크 추가'}
+                </h3>
+                <button
+                  onClick={() => {
+                    setIsFormOpen(false);
+                    setEditingTask(null);
+                  }}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-gray-300 mb-1">카테고리</label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({...formData, category: e.target.value as 'CCGG' | 'IP Productions'})}
+                    className="w-full bg-gray-700 text-white rounded-lg px-3 py-2"
+                  >
+                    <option value="CCGG">CCGG</option>
+                    <option value="IP Productions">IP Productions</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 mb-1">태스크 제목</label>
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    className="w-full bg-gray-700 text-white rounded-lg px-3 py-2"
+                    placeholder="태스크 제목을 입력하세요"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 mb-1">플랫폼</label>
+                  <select
+                    value={formData.platform}
+                    onChange={(e) => setFormData({...formData, platform: e.target.value as 'twitter' | 'discord' | 'telegram' | 'other'})}
+                    className="w-full bg-gray-700 text-white rounded-lg px-3 py-2"
+                  >
+                    <option value="twitter">Twitter</option>
+                    <option value="discord">Discord</option>
+                    <option value="telegram">Telegram</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 mb-1">링크</label>
+                  <input
+                    type="url"
+                    value={formData.link}
+                    onChange={(e) => setFormData({...formData, link: e.target.value})}
+                    className="w-full bg-gray-700 text-white rounded-lg px-3 py-2"
+                    placeholder="https://"
+                  />
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-gray-300 mb-1">포인트</label>
+                    <input
+                      type="number"
+                      value={formData.reward.points}
+                      onChange={(e) => setFormData({
+                        ...formData, 
+                        reward: { ...formData.reward, points: parseInt(e.target.value) }
+                      })}
+                      className="w-full bg-gray-700 text-white rounded-lg px-3 py-2"
+                      min="0"
+                    />
                   </div>
-                  <div>
-                    <div className="text-white">{task.title}</div>
-                    <div className="text-sm text-yellow-500 flex items-center gap-2">
-                      <span>🪙 {task.reward.points}</span>
-                      <span>+ 💎 {task.reward.coins}</span>
-                    </div>
+                  <div className="flex-1">
+                    <label className="block text-gray-300 mb-1">코인</label>
+                    <input
+                      type="number"
+                      value={formData.reward.coins}
+                      onChange={(e) => setFormData({
+                        ...formData, 
+                        reward: { ...formData.reward, coins: parseInt(e.target.value) }
+                      })}
+                      className="w-full bg-gray-700 text-white rounded-lg px-3 py-2"
+                      min="0"
+                    />
                   </div>
                 </div>
-                <button
-                  onClick={() => handleTaskClick(task)}
-                  className={`px-4 py-2 rounded-lg ${
-                    task.action === 'Claim' 
-                      ? 'bg-green-600 hover:bg-green-700' 
-                      : 'bg-blue-600 hover:bg-blue-700'
-                  } text-white`}
-                >
-                  {task.action}
-                </button>
+
+                <div>
+                  <label className="block text-gray-300 mb-1">액션</label>
+                  <select
+                    value={formData.action}
+                    onChange={(e) => setFormData({...formData, action: e.target.value as Task['action']})}
+                    className="w-full bg-gray-700 text-white rounded-lg px-3 py-2"
+                  >
+                    <option value="Join">Join</option>
+                    <option value="Follow">Follow</option>
+                    <option value="Visit">Visit</option>
+                    <option value="Claim">Claim</option>
+                  </select>
+                </div>
+
+                <div className="flex justify-end gap-2 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsFormOpen(false);
+                      setEditingTask(null);
+                    }}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                  >
+                    <Check className="w-4 h-4" />
+                    {editingTask ? '수정' : '저장'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* 태스크 목록 */}
+        {Object.entries(groupedTasks).map(([category, categoryTasks]) => (
+          <div key={category} className="mb-6">
+            <div className="text-white text-lg mb-2">{category}</div>
+            {categoryTasks.map(task => (
+              <div 
+                key={task.id} 
+                className="bg-gray-800 rounded-lg p-4 mb-3"
+              >
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center">
+                    <div className="mr-3">
+                      {getPlatformIcon(task.platform)}
+                    </div>
+                    <div>
+                      <div className="text-white">{task.title}</div>
+                      <div className="text-sm text-yellow-500 flex items-center gap-2">
+                        <span>🪙 {task.reward.points}</span>
+                        <span>+ 💎 {task.reward.coins}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {isAdmin && (
+                      <>
+                        <button
+                          onClick={() => handleEditTask(task)}
+                          className="p-2 text-gray-400 hover:text-white"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTask(task.id)}
+                          className="p-2 text-gray-400 hover:text-red-500"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                    <button
+                      onClick={() => handleTaskClick(task)}
+                      className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      {task.action}
+                    </button>
+                  </div>
+                </div>
               </div>
             ))}
           </div>

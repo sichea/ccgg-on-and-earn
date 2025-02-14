@@ -24,50 +24,55 @@ const BottomNav = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 w-full bg-black border-t border-gray-800">
-      <div className="flex items-center justify-between px-4 py-2 relative">
-        {navItems.map((item, index) => {
-          const Icon = item.icon;
-          const active = isActive(item.href);
-          
-          if (index === 1) {
-            return (
-              <React.Fragment key={item.href}>
-                <Link href={item.href} className="flex flex-col items-center">
-                  <Icon className={`w-6 h-6 ${active ? 'text-yellow-400' : 'text-gray-400'}`} />
-                  <span className={`text-xs mt-1 ${active ? 'text-yellow-400' : 'text-gray-400'}`}>
-                    {item.label}
-                  </span>
-                </Link>
-                {/* 중앙 CCGG 로고 */}
-                <div className="relative -mt-8">
-                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center p-1">
-                      <Image
-                        src="/ccgg-logo.png"
-                        alt="CCGG Logo"
-                        width={60}
-                        height={60}
-                        priority
-                      />
-                    </div>
-                  </div>
-                </div>
-              </React.Fragment>
-            );
-          }
+    <div className="fixed bottom-0 left-0 right-0 z-50">
+      {/* 중앙 CCGG 로고 - 네비게이션 위에 위치 */}
+      <Link href="/" className="absolute left-1/2 -translate-x-1/2 -translate-y-6 z-10">
+        <div className="w-16 h-16 bg-[#0f1012] rounded-full flex items-center justify-center overflow-hidden border-4 border-[#0f1012]">
+          <Image
+            src="/ccgg-logo.png"
+            alt="CCGG Logo"
+            width={56}
+            height={56}
+            className="rounded-full"
+            priority
+          />
+        </div>
+      </Link>
 
-          return (
-            <Link key={item.href} href={item.href} className="flex flex-col items-center">
-              <Icon className={`w-6 h-6 ${active ? 'text-yellow-400' : 'text-gray-400'}`} />
-              <span className={`text-xs mt-1 ${active ? 'text-yellow-400' : 'text-gray-400'}`}>
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
+      {/* 네비게이션 바 */}
+      <nav className="bg-[#0f1012] border-t border-gray-800 relative">
+        <div className="flex items-center justify-between px-4 py-2">
+          {navItems.map((item, index) => {
+            const Icon = item.icon;
+            const active = isActive(item.href);
+            
+            // 중앙 공간 생성
+            if (index === 2) {
+              return (
+                <React.Fragment key={item.href}>
+                  <div className="w-16" /> {/* 로고를 위한 공간 */}
+                  <Link href={item.href} className="flex flex-col items-center">
+                    <Icon className={`w-6 h-6 ${active ? 'text-yellow-400' : 'text-gray-400'}`} />
+                    <span className={`text-xs mt-1 ${active ? 'text-yellow-400' : 'text-gray-400'}`}>
+                      {item.label}
+                    </span>
+                  </Link>
+                </React.Fragment>
+              );
+            }
+
+            return (
+              <Link key={item.href} href={item.href} className="flex flex-col items-center">
+                <Icon className={`w-6 h-6 ${active ? 'text-yellow-400' : 'text-gray-400'}`} />
+                <span className={`text-xs mt-1 ${active ? 'text-yellow-400' : 'text-gray-400'}`}>
+                  {item.label}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+    </div>
   );
 };
 
