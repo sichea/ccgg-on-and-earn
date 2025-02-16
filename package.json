@@ -14,11 +14,14 @@
   "description": "",
   "dependencies": {
     "@twa-dev/sdk": "^8.0.2",
+    "firebase": "^11.3.1",
+    "firebase-admin": "^13.1.0",
     "lucide-react": "^0.336.0",
     "next": "^14.2.24",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "telegraf": "^4.16.3"
+    "telegraf": "^4.16.3",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/node": "20.11.5",

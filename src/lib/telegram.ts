@@ -63,3 +63,30 @@ export const closeTelegramWebApp = () => {
     window.Telegram.WebApp.close();
   }
 };
+
+export function validateInitData(initData: string) {
+  if (typeof window === 'undefined' || !window.Telegram?.WebApp) {
+    return null;
+  }
+
+  try {
+    // WebApp의 initDataUnsafe를 사용
+    const { user } = window.Telegram.WebApp.initDataUnsafe;
+    
+    if (!user) {
+      return null;
+    }
+
+    return {
+      user: {
+        id: user.id,
+        username: user.username,
+        first_name: user.first_name,
+        last_name: user.last_name
+      }
+    };
+  } catch (error) {
+    console.error('Failed to validate initData:', error);
+    return null;
+  }
+}
