@@ -1,96 +1,60 @@
 // src/app/api/tasks/route.ts
-import { db } from '@/lib/firebase/config';
-import { 
-  collection, 
-  getDocs, 
-  query, 
-  where, 
-  Timestamp,
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  increment 
-} from 'firebase/firestore';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { taskService } from '@/lib/services/taskService';
+import { validateTelegramUser } from '@/lib/telegram/auth';
+import { isAdminUser } from '@/config/admin';
 
-// GET: 태스크 목록 조회
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const tasksRef = collection(db, 'tasks');
-    const q = query(tasksRef, where('isActive', '==', true));
-    const querySnapshot = await getDocs(q);
-    
-    const tasks = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
+    const userId = req.headers.get('x-telegram-user-id');
+    if (!userId) {
+      return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 });
+    }
+
+    const tasks = await taskService.getActiveTasks();
+    const completedTasks = await taskService.getUserCompletedTasks(userId);
+
+    const completedTaskIds = new Set(completedTasks.map(task => task.taskId));
+    const tasksWithStatus = tasks.map(task => ({
+      ...task,
+      isCompleted: completedTaskIds.has(task.id)
     }));
 
-    return NextResponse.json({ success: true, tasks });
+    return NextResponse.json({ tasks: tasksWithStatus });
   } catch (error) {
-    console.error('Error fetching tasks:', error);
+    console.error('태스크 목록 조회 실패:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch tasks' }, 
+      { error: '태스크 목록을 불러오는데 실패했습니다.' },
       { status: 500 }
     );
   }
 }
 
-// POST: 태스크 완료 처리
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const { userId, taskId } = await request.json();
+    const user = await validateTelegramUser(req);
+    if (!user) {
+      return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 });
+    }
 
-    // 태스크 정보 조회
-    const taskRef = doc(db, 'tasks', taskId);
-    const taskSnap = await getDoc(taskRef);
-    
-    if (!taskSnap.exists()) {
+    const { taskId } = await req.json();
+    if (!taskId) {
       return NextResponse.json(
-        { success: false, error: 'Task not found' },
-        { status: 404 }
+        { error: '태스크 ID가 필요합니다.' },
+        { status: 400 }
       );
     }
 
-    const task = taskSnap.data();
-    const currentTime = Timestamp.now();
+    const result = await taskService.completeTask(user.uid, taskId);
+    if (!result.success) {
+      return NextResponse.json({ error: result.message }, { status: 400 });
+    }
 
-    // 완료 정보 저장
-    const completedTaskRef = doc(db, 'completedTasks', `${userId}_${taskId}`);
-    await setDoc(completedTaskRef, {
-      userId,
-      taskId,
-      completedAt: currentTime,
-      pointsEarned: task.points
-    });
-
-    // 사용자 포인트 업데이트
-    const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, {
-      points: increment(task.points)
-    });
-
-    // 포인트 트랜잭션 기록
-    const transactionRef = doc(collection(db, 'pointTransactions'));
-    await setDoc(transactionRef, {
-      userId,
-      amount: task.points,
-      type: 'task',
-      description: `Completed task: ${task.title}`,
-      referenceId: taskId,
-      createdAt: currentTime
-    });
-
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Task completed successfully',
-      pointsEarned: task.points
-    });
-
+    return NextResponse.json({ message: result.message });
   } catch (error) {
-    console.error('Error completing task:', error);
+    console.error('태스크 완료 처리 실패:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to complete task' },
+      { error: '태스크 완료 처리에 실패했습니다.' },
       { status: 500 }
     );
   }
