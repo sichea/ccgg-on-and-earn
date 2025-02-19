@@ -1,24 +1,60 @@
+// src/lib/telegram.ts
 'use client';
 
 import { db } from './firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
-// 클라이언트 사이드에서만 사용할 수 있도록 수정
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: {
+        ready: () => void;
+        expand: () => void;
+        MainButton: {
+          text: string;
+          setText: (text: string) => void;
+          show: () => void;
+          hide: () => void;
+          onClick: (callback: () => void) => void;
+          offClick: () => void;
+        };
+        BackButton: {
+          show: () => void;
+          hide: () => void;
+          onClick: (callback: () => void) => void;
+          offClick: () => void;
+        };
+        initDataUnsafe?: {
+          user?: {
+            id: number;
+            username?: string;
+            first_name?: string;
+            last_name?: string;
+          };
+        };
+      };
+    };
+  }
+}
+
 export const initTelegramWebApp = () => {
-  if (typeof window !== 'undefined') {
-    // @ts-ignore
-    const webapp = window.Telegram?.WebApp;
-    if (webapp) {
-      webapp.ready();
-      webapp.expand();
-    }
+  if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+    const webapp = window.Telegram.WebApp;
+    webapp.ready();
+    webapp.expand();
     return webapp;
   }
   return null;
 };
 
-// 텔레그램 유저 데이터 저장
-export const saveTelegramUser = async (telegramUser: any) => {
+type TelegramUser = {
+  id: number;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+};
+
+export const saveTelegramUser = async (telegramUser: TelegramUser) => {
   try {
     const userRef = doc(db, 'users', telegramUser.id.toString());
     await setDoc(userRef, {
@@ -39,7 +75,6 @@ export const saveTelegramUser = async (telegramUser: any) => {
   }
 };
 
-// 유저 포인트 업데이트
 export const updateUserPoints = async (userId: string, points: number, coins: number) => {
   try {
     const userRef = doc(db, 'users', userId);

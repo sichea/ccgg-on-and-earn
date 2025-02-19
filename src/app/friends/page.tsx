@@ -12,8 +12,8 @@ interface ReferralHistory {
 
 const FriendsPage = () => {
   const [referralLink] = useState('https://t.me/ccgguild?start=ref_123456');
-  const [totalEarned, setTotalEarned] = useState(2500);
-  const [referralCount, setReferralCount] = useState(5);
+  const totalEarned = 2500;
+  const referralCount = 5;
   
   const [history] = useState<ReferralHistory[]>([
     {
