@@ -177,8 +177,8 @@ const TaskList = () => {
 
         {/* 태스크 추가/수정 폼 */}
         {isFormOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
+            <div className="bg-gray-800 rounded-lg p-4 w-full max-w-md my-4">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-white text-lg">
                   {editingTask ? '태스크 수정' : '새 태스크 추가'}
@@ -194,18 +194,19 @@ const TaskList = () => {
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-gray-300 mb-1">카테고리</label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({...formData, category: e.target.value as 'CCGG' | 'IP Productions'})}
-                    className="w-full bg-gray-700 text-white rounded-lg px-3 py-2"
-                  >
-                    <option value="CCGG">CCGG</option>
-                    <option value="IP Productions">IP Productions</option>
-                  </select>
-                </div>
+              <form onSubmit={handleSubmit} className="space-y-3">
+              {/* 폼 내용의 padding과 margin 축소 */}
+              <div>
+                <label className="block text-gray-300 mb-1 text-sm">카테고리</label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({...formData, category: e.target.value as 'CCGG' | 'IP Productions'})}
+                  className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="CCGG">CCGG</option>
+                  <option value="IP Productions">IP Productions</option>
+                </select>
+              </div>
 
                 <div>
                   <label className="block text-gray-300 mb-1">태스크 제목</label>
@@ -286,28 +287,28 @@ const TaskList = () => {
                   </select>
                 </div>
 
-                <div className="flex justify-end gap-2 mt-6">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsFormOpen(false);
-                      setEditingTask(null);
-                    }}
-                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-                  >
-                    취소
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-                  >
-                    <Check className="w-4 h-4" />
-                    {editingTask ? '수정' : '저장'}
-                  </button>
-                </div>
-              </form>
-            </div>
+                <div className="flex justify-end gap-2 mt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsFormOpen(false);
+                    setEditingTask(null);
+                  }}
+                  className="px-3 py-1.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1 text-sm"
+                >
+                  <Check className="w-4 h-4" />
+                  {editingTask ? '수정' : '저장'}
+                </button>
+              </div>
+            </form>
           </div>
+        </div>
         )}
 
         {/* 태스크 목록 */}
