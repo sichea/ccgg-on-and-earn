@@ -13,6 +13,8 @@ import {
   Check 
 } from 'lucide-react';
 import { isAdminUser } from '@/config/admin';
+import { useTasks, useUser } from '@/hooks/useFirebase';
+import { TaskFormData } from '@/types/task';
 
 interface Task {
   id: string;
@@ -25,14 +27,31 @@ interface Task {
   platform: 'twitter' | 'discord' | 'telegram' | 'other';
   action: 'Visit' | 'Join' | 'Follow' | 'Fly' | 'Claim';
   category: 'CCGG' | 'IP Productions';
+  createdAt: Date;  // 추가
 }
 
+type FormData = Omit<Task, 'id' | 'createdAt'>;
+
 const TaskList = () => {
+  // Firebase hooks
+  const { tasks, loading: tasksLoading, addTask, deleteTask, updateTask } = useTasks();
+  const telegramId = window?.Telegram?.WebApp?.initDataUnsafe?.user?.id?.toString();
+  const { user, loading: userLoading, updatePoints } = useUser(telegramId);
+
+  // Local states
   const [isAdmin, setIsAdmin] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [formData, setFormData] = useState<FormData>({
+    title: '',
+    platform: 'twitter',
+    category: 'CCGG',
+    link: '',
+    reward: { points: 0, coins: 0 },
+    action: 'Join'
+  });
 
-  // 관리자 권한 확인
+  // Admin check effect
   useEffect(() => {
     const webApp = window.Telegram?.WebApp;
     if (webApp?.initDataUnsafe?.user?.id) {
@@ -41,43 +60,12 @@ const TaskList = () => {
     }
   }, []);
 
-  // 초기 태스크 데이터
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: '1',
-      title: 'CCGG 텔레그램 채널 구독',
-      link: 'https://t.me/ccgguild',
-      reward: { points: 100, coins: 30 },
-      platform: 'telegram',
-      action: 'Join',
-      category: 'CCGG'
-    },
-    {
-      id: '2',
-      title: 'CCGG 디스코드 채널 참여',
-      reward: { points: 150, coins: 45 },
-      platform: 'discord',
-      action: 'Join',
-      category: 'CCGG'
-    },
-    {
-      id: '3',
-      title: 'Partner A 트위터 팔로우',
-      reward: { points: 80, coins: 25 },
-      platform: 'twitter',
-      action: 'Follow',
-      category: 'IP Productions'
-    }
-  ]);
-
-  const [formData, setFormData] = useState<Omit<Task, 'id'>>({
-    title: '',
-    platform: 'twitter',
-    category: 'CCGG',
-    link: '',
-    reward: { points: 0, coins: 0 },
-    action: 'Join'
-  });
+  // Loading state
+  if (tasksLoading || userLoading) {
+    return <div className="flex justify-center items-center min-h-screen">
+      <div className="text-white">Loading...</div>
+    </div>;
+  }
 
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
@@ -111,42 +99,39 @@ const TaskList = () => {
     setIsFormOpen(true);
   };
 
-  const handleDeleteTask = (taskId: string) => {
+  const handleDeleteTask = async (taskId: string) => {
     if (window.confirm('정말로 이 태스크를 삭제하시겠습니까?')) {
-      setTasks(tasks.filter(task => task.id !== taskId));
+      try {
+        await deleteTask(taskId);
+      } catch (error) {
+        console.error('Error deleting task:', error);
+      }
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingTask) {
-      // 태스크 수정
-      setTasks(tasks.map(task => 
-        task.id === editingTask.id 
-          ? { ...task, ...formData }
-          : task
-      ));
-    } else {
-      // 새 태스크 추가
-      const newTask: Task = {
-        id: Date.now().toString(),
-        ...formData
-      };
-      setTasks([...tasks, newTask]);
-    }
+    try {
+      if (editingTask) {
+        await updateTask(editingTask.id, formData);
+      } else {
+        await addTask(formData);
+      }
 
-    // 폼 초기화
-    setIsFormOpen(false);
-    setEditingTask(null);
-    setFormData({
-      title: '',
-      platform: 'twitter',
-      category: 'CCGG',
-      link: '',
-      reward: { points: 0, coins: 0 },
-      action: 'Join'
-    });
+      setIsFormOpen(false);
+      setEditingTask(null);
+      setFormData({
+        title: '',
+        platform: 'twitter',
+        category: 'CCGG',
+        link: '',
+        reward: { points: 0, coins: 0 },
+        action: 'Join'
+      });
+    } catch (error) {
+      console.error('Error submitting task:', error);
+    }
   };
 
   // 카테고리별로 태스크 그룹화
@@ -195,18 +180,17 @@ const TaskList = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-3">
-              {/* 폼 내용의 padding과 margin 축소 */}
-              <div>
-                <label className="block text-gray-300 mb-1 text-sm">카테고리</label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({...formData, category: e.target.value as 'CCGG' | 'IP Productions'})}
-                  className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 text-sm"
-                >
-                  <option value="CCGG">CCGG</option>
-                  <option value="IP Productions">IP Productions</option>
-                </select>
-              </div>
+                <div>
+                  <label className="block text-gray-300 mb-1 text-sm">카테고리</label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({...formData, category: e.target.value as 'CCGG' | 'IP Productions'})}
+                    className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 text-sm"
+                  >
+                    <option value="CCGG">CCGG</option>
+                    <option value="IP Productions">IP Productions</option>
+                  </select>
+                </div>
 
                 <div>
                   <label className="block text-gray-300 mb-1">태스크 제목</label>
@@ -288,27 +272,27 @@ const TaskList = () => {
                 </div>
 
                 <div className="flex justify-end gap-2 mt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsFormOpen(false);
-                    setEditingTask(null);
-                  }}
-                  className="px-3 py-1.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm"
-                >
-                  취소
-                </button>
-                <button
-                  type="submit"
-                  className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1 text-sm"
-                >
-                  <Check className="w-4 h-4" />
-                  {editingTask ? '수정' : '저장'}
-                </button>
-              </div>
-            </form>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsFormOpen(false);
+                      setEditingTask(null);
+                    }}
+                    className="px-3 py-1.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1 text-sm"
+                  >
+                    <Check className="w-4 h-4" />
+                    {editingTask ? '수정' : '저장'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
         )}
 
         {/* 태스크 목록 */}
