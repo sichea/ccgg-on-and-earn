@@ -35,8 +35,14 @@ type FormData = Omit<Task, 'id' | 'createdAt'>;
 const TaskList = () => {
   // Firebase hooks
   const { tasks, loading: tasksLoading, addTask, deleteTask, updateTask } = useTasks();
-  const telegramId = window?.Telegram?.WebApp?.initDataUnsafe?.user?.id?.toString();
-  const { user, loading: userLoading, updatePoints } = useUser(telegramId);
+  const [telegramId, setTelegramId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.Telegram?.WebApp?.initDataUnsafe?.user?.id) {
+      setTelegramId(window.Telegram.WebApp.initDataUnsafe.user.id.toString());
+    }
+  }, []);
+  const { user, loading: userLoading, updatePoints } = useUser(telegramId ?? undefined);
 
   // Local states
   const [isAdmin, setIsAdmin] = useState(false);
@@ -81,10 +87,11 @@ const TaskList = () => {
   };
 
   const handleTaskClick = (task: Task) => {
-    if (task.link) {
+    if (typeof window !== "undefined" && task.link) {
       window.open(task.link, '_blank');
     }
   };
+  
 
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
@@ -100,7 +107,7 @@ const TaskList = () => {
   };
 
   const handleDeleteTask = async (taskId: string) => {
-    if (window.confirm('정말로 이 태스크를 삭제하시겠습니까?')) {
+    if (typeof window !== "undefined" && window.confirm('정말로 이 태스크를 삭제하시겠습니까?')) {
       try {
         await deleteTask(taskId);
       } catch (error) {
@@ -108,6 +115,7 @@ const TaskList = () => {
       }
     }
   };
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
