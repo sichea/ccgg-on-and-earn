@@ -12,7 +12,8 @@ import {
   Link
 } from 'lucide-react';
 import { isAdminUser } from '@/config/admin';
-import { initTelegramWebApp } from '@/lib/telegram'; 
+import { initTelegramWebApp } from '@/lib/telegram';
+
 
 
 interface Task {
@@ -29,19 +30,6 @@ interface Task {
 }
 
 // Telegram WebApp 타입 정의
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp?: {
-        initDataUnsafe?: {
-          user?: {
-            id: number;
-          };
-        };
-      };
-    };
-  }
-}
 
 const TaskList = () => {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -69,8 +57,9 @@ const TaskList = () => {
   });
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id) {
-      const userId = window.Telegram.WebApp.initDataUnsafe.user.id.toString();
+    const webapp = window.Telegram?.WebApp;
+    if (webapp?.initDataUnsafe?.user?.id) {
+      const userId = webapp.initDataUnsafe.user.id.toString();
       setIsAdmin(isAdminUser(userId));
     }
   }, []);

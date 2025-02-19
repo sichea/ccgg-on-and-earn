@@ -54,7 +54,6 @@ interface Winner {
 
 const EventGame = () => {
   const [isAdmin, setIsAdmin] = useState(false);
-  const [activeTab, setActiveTab] = useState<'events' | 'responses'>('events');
   const [events, setEvents] = useState<Event[]>([]);
   const [responses, setResponses] = useState<Response[]>([]);
   const [winners, setWinners] = useState<Winner[]>([]);
@@ -116,18 +115,74 @@ const EventGame = () => {
   // MainButton 상태 업데이트
   useEffect(() => {
     const webapp = window.Telegram?.WebApp;
-    if (webapp) {
-      if (selectedEvent && !editingResponseId) {
-        webapp.MainButton.setText('답변 제출하기');
-        webapp.MainButton.show();
-      } else if (selectedEvent && editingResponseId) {
-        webapp.MainButton.setText('답변 수정하기');
-        webapp.MainButton.show();
-      } else {
-        webapp.MainButton.hide();
+    if (!webapp) return;
+  
+    const handleSubmitResponse = () => {
+      if (!selectedEventId || !userAnswer) {
+        alert('답변을 입력해주세요.');
+        return;
       }
+  
+      if (!validateResponse(selectedEventId, userId)) {
+        return;
+      }
+  
+      const event = events.find(e => e.id === selectedEventId);
+      if (!event?.isActive) {
+        alert('종료된 이벤트에는 답변할 수 없습니다.');
+        return;
+      }
+  
+      if (editingResponseId) {
+        setResponses(prev => prev.map(response => 
+          response.id === editingResponseId
+            ? { ...response, answer: userAnswer, createdAt: getCurrentDateTime() }
+            : response
+        ));
+        setEditingResponseId(null);
+        alert('답변이 수정되었습니다.');
+      } else {
+        const hasAlreadyResponded = responses.some(
+          response => response.eventId === selectedEventId && response.userId === userId
+        );
+  
+        if (hasAlreadyResponded) {
+          alert('이미 답변을 제출하셨습니다. 수정하시려면 답변 목록에서 수정 버튼을 클릭해주세요.');
+          return;
+        }
+  
+        const response = {
+          id: generateId(),
+          eventId: selectedEventId,
+          userId,
+          answer: userAnswer,
+          createdAt: getCurrentDateTime()
+        };
+        
+        setResponses(prev => [...prev, response]);
+        alert('답변이 등록되었습니다.');
+      }
+  
+      setUserAnswer('');
+      setSelectedEventId('');
+    };
+  
+    if (selectedEvent && !editingResponseId) {
+      webapp.MainButton.setText('답변 제출하기');
+      webapp.MainButton.show();
+      webapp.MainButton.onClick(handleSubmitResponse);
+    } else if (selectedEvent && editingResponseId) {
+      webapp.MainButton.setText('답변 수정하기');
+      webapp.MainButton.show();
+      webapp.MainButton.onClick(handleSubmitResponse);
+    } else {
+      webapp.MainButton.hide();
     }
-  }, [selectedEvent, editingResponseId]);
+  
+    return () => {
+      webapp.MainButton.offClick();
+    };
+  }, [selectedEvent, editingResponseId, selectedEventId, userAnswer, userId, events, responses]);
 
   // 뒤로가기 버튼 상태 업데이트
   useEffect(() => {
