@@ -10,8 +10,7 @@ import {
   Trash2, 
   Plus, 
   X, 
-  Check,
-  Loader2
+  Check 
 } from 'lucide-react';
 import { isAdminUser } from '@/config/admin';
 
@@ -26,16 +25,12 @@ interface Task {
   platform: 'twitter' | 'discord' | 'telegram' | 'other';
   action: 'Visit' | 'Join' | 'Follow' | 'Fly' | 'Claim';
   category: 'CCGG' | 'IP Productions';
-  isCompleted?: boolean;
 }
 
 const TaskList = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [completing, setCompleting] = useState<string | null>(null);
 
   // 관리자 권한 확인
   useEffect(() => {
@@ -46,39 +41,43 @@ const TaskList = () => {
     }
   }, []);
 
-  // 태스크 목록 불러오기
-  const [tasks, setTasks] = useState<Task[]>([]);
-
-  const fetchTasks = async () => {
-    try {
-      setLoading(true);
-      const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
-      
-      const response = await fetch('/api/tasks', {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-telegram-user-id': userId?.toString() || ''
-        }
-      });
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || '태스크 목록을 불러오는데 실패했습니다.');
-      }
-  
-      const data = await response.json();
-      setTasks(data.tasks || []);
-    } catch (err) {
-      console.error('Error fetching tasks:', err);
-      setError(err instanceof Error ? err.message : '태스크 목록을 불러오는데 실패했습니다.');
-    } finally {
-      setLoading(false);
+  // 초기 태스크 데이터
+  const [tasks, setTasks] = useState<Task[]>([
+    {
+      id: '1',
+      title: 'CCGG 텔레그램 채널 구독',
+      link: 'https://t.me/ccgguild',
+      reward: { points: 100, coins: 30 },
+      platform: 'telegram',
+      action: 'Join',
+      category: 'CCGG'
+    },
+    {
+      id: '2',
+      title: 'CCGG 디스코드 채널 참여',
+      reward: { points: 150, coins: 45 },
+      platform: 'discord',
+      action: 'Join',
+      category: 'CCGG'
+    },
+    {
+      id: '3',
+      title: 'Partner A 트위터 팔로우',
+      reward: { points: 80, coins: 25 },
+      platform: 'twitter',
+      action: 'Follow',
+      category: 'IP Productions'
     }
-  };
+  ]);
 
-  useEffect(() => {
-    fetchTasks();
-  }, []);
+  const [formData, setFormData] = useState<Omit<Task, 'id'>>({
+    title: '',
+    platform: 'twitter',
+    category: 'CCGG',
+    link: '',
+    reward: { points: 0, coins: 0 },
+    action: 'Join'
+  });
 
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
@@ -93,50 +92,9 @@ const TaskList = () => {
     }
   };
 
-  const showMessage = (title: string, message: string) => {
-    try {
-      (window.Telegram.WebApp as any).showPopup({ title, message });
-    } catch (e) {
-      alert(message);
-    }
-  };
-
-  const handleTaskClick = async (task: Task) => {
-    if (task.isCompleted) {
-      showMessage('완료됨', '이미 완료한 태스크입니다.');
-      return;
-    }
-  
+  const handleTaskClick = (task: Task) => {
     if (task.link) {
       window.open(task.link, '_blank');
-    }
-  
-    try {
-      setCompleting(task.id);
-      const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
-  
-      const response = await fetch('/api/tasks', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-telegram-user-id': userId?.toString() || ''
-        },
-        body: JSON.stringify({ taskId: task.id })
-      });
-  
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || '태스크 완료 처리에 실패했습니다.');
-      }
-  
-      await fetchTasks();
-      showMessage('완료!', data.message);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '태스크 완료 처리에 실패했습니다.');
-      showMessage('오류', err instanceof Error ? err.message : '태스크 완료 처리에 실패했습니다.');
-    } finally {
-      setCompleting(null);
     }
   };
 
@@ -153,64 +111,42 @@ const TaskList = () => {
     setIsFormOpen(true);
   };
 
-  const handleDeleteTask = async (taskId: string) => {
-    try {
-      const response = await fetch(`/api/tasks/${taskId}`, {
-        method: 'DELETE'
-      });
-
-      if (!response.ok) {
-        throw new Error('태스크 삭제에 실패했습니다.');
-      }
-
-      await fetchTasks();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '태스크 삭제에 실패했습니다.');
+  const handleDeleteTask = (taskId: string) => {
+    if (window.confirm('정말로 이 태스크를 삭제하시겠습니까?')) {
+      setTasks(tasks.filter(task => task.id !== taskId));
     }
   };
 
-  const [formData, setFormData] = useState<Omit<Task, 'id'>>({
-    title: '',
-    platform: 'twitter',
-    category: 'CCGG',
-    link: '',
-    reward: { points: 0, coins: 0 },
-    action: 'Join'
-  });
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    try {
-      const response = await fetch('/api/tasks', {
-        method: editingTask ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...(editingTask && { id: editingTask.id }),
-          ...formData
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(editingTask ? '태스크 수정에 실패했습니다.' : '태스크 생성에 실패했습니다.');
-      }
-
-      await fetchTasks();
-      
-      // 폼 초기화
-      setIsFormOpen(false);
-      setEditingTask(null);
-      setFormData({
-        title: '',
-        platform: 'twitter',
-        category: 'CCGG',
-        link: '',
-        reward: { points: 0, coins: 0 },
-        action: 'Join'
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '작업에 실패했습니다.');
+    if (editingTask) {
+      // 태스크 수정
+      setTasks(tasks.map(task => 
+        task.id === editingTask.id 
+          ? { ...task, ...formData }
+          : task
+      ));
+    } else {
+      // 새 태스크 추가
+      const newTask: Task = {
+        id: Date.now().toString(),
+        ...formData
+      };
+      setTasks([...tasks, newTask]);
     }
+
+    // 폼 초기화
+    setIsFormOpen(false);
+    setEditingTask(null);
+    setFormData({
+      title: '',
+      platform: 'twitter',
+      category: 'CCGG',
+      link: '',
+      reward: { points: 0, coins: 0 },
+      action: 'Join'
+    });
   };
 
   // 카테고리별로 태스크 그룹화
@@ -221,22 +157,6 @@ const TaskList = () => {
     acc[task.category].push(task);
     return acc;
   }, {});
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-4 bg-red-500 text-white rounded-lg">
-        {error}
-      </div>
-    );
-  }
 
   return (
     <div className="bg-gray-900 min-h-screen pb-20">
@@ -255,11 +175,137 @@ const TaskList = () => {
           </div>
         )}
 
-        {/* 태스크 추가/수정 폼 모달 */}
+        {/* 태스크 추가/수정 폼 */}
         {isFormOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md">
-              {/* ... (기존 폼 코드 유지) ... */}
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-white text-lg">
+                  {editingTask ? '태스크 수정' : '새 태스크 추가'}
+                </h3>
+                <button
+                  onClick={() => {
+                    setIsFormOpen(false);
+                    setEditingTask(null);
+                  }}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-gray-300 mb-1">카테고리</label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({...formData, category: e.target.value as 'CCGG' | 'IP Productions'})}
+                    className="w-full bg-gray-700 text-white rounded-lg px-3 py-2"
+                  >
+                    <option value="CCGG">CCGG</option>
+                    <option value="IP Productions">IP Productions</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 mb-1">태스크 제목</label>
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    className="w-full bg-gray-700 text-white rounded-lg px-3 py-2"
+                    placeholder="태스크 제목을 입력하세요"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 mb-1">플랫폼</label>
+                  <select
+                    value={formData.platform}
+                    onChange={(e) => setFormData({...formData, platform: e.target.value as 'twitter' | 'discord' | 'telegram' | 'other'})}
+                    className="w-full bg-gray-700 text-white rounded-lg px-3 py-2"
+                  >
+                    <option value="twitter">Twitter</option>
+                    <option value="discord">Discord</option>
+                    <option value="telegram">Telegram</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 mb-1">링크</label>
+                  <input
+                    type="url"
+                    value={formData.link}
+                    onChange={(e) => setFormData({...formData, link: e.target.value})}
+                    className="w-full bg-gray-700 text-white rounded-lg px-3 py-2"
+                    placeholder="https://"
+                  />
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-gray-300 mb-1">포인트</label>
+                    <input
+                      type="number"
+                      value={formData.reward.points}
+                      onChange={(e) => setFormData({
+                        ...formData, 
+                        reward: { ...formData.reward, points: parseInt(e.target.value) }
+                      })}
+                      className="w-full bg-gray-700 text-white rounded-lg px-3 py-2"
+                      min="0"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-gray-300 mb-1">코인</label>
+                    <input
+                      type="number"
+                      value={formData.reward.coins}
+                      onChange={(e) => setFormData({
+                        ...formData, 
+                        reward: { ...formData.reward, coins: parseInt(e.target.value) }
+                      })}
+                      className="w-full bg-gray-700 text-white rounded-lg px-3 py-2"
+                      min="0"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 mb-1">액션</label>
+                  <select
+                    value={formData.action}
+                    onChange={(e) => setFormData({...formData, action: e.target.value as Task['action']})}
+                    className="w-full bg-gray-700 text-white rounded-lg px-3 py-2"
+                  >
+                    <option value="Join">Join</option>
+                    <option value="Follow">Follow</option>
+                    <option value="Visit">Visit</option>
+                    <option value="Claim">Claim</option>
+                  </select>
+                </div>
+
+                <div className="flex justify-end gap-2 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsFormOpen(false);
+                      setEditingTask(null);
+                    }}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                  >
+                    <Check className="w-4 h-4" />
+                    {editingTask ? '수정' : '저장'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
@@ -271,9 +317,7 @@ const TaskList = () => {
             {categoryTasks.map(task => (
               <div 
                 key={task.id} 
-                className={`bg-gray-800 rounded-lg p-4 mb-3 ${
-                  task.isCompleted ? 'opacity-50' : ''
-                }`}
+                className="bg-gray-800 rounded-lg p-4 mb-3"
               >
                 <div className="flex justify-between items-center">
                   <div className="flex items-center">
@@ -307,25 +351,9 @@ const TaskList = () => {
                     )}
                     <button
                       onClick={() => handleTaskClick(task)}
-                      disabled={task.isCompleted || completing === task.id}
-                      className={`px-4 py-2 rounded-lg ${
-                        task.isCompleted
-                          ? 'bg-gray-600'
-                          : completing === task.id
-                          ? 'bg-blue-700'
-                          : 'bg-blue-600 hover:bg-blue-700'
-                      } text-white flex items-center gap-2`}
+                      className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
                     >
-                      {completing === task.id ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          처리중...
-                        </>
-                      ) : task.isCompleted ? (
-                        '완료됨'
-                      ) : (
-                        task.action
-                      )}
+                      {task.action}
                     </button>
                   </div>
                 </div>

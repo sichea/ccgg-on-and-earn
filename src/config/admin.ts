@@ -1,6 +1,6 @@
-// src/config/admin.ts
+// src/config/admin.ts 파일이 필요합니다
 export const ADMIN_IDS = [
-  '5172197798' // 여기에 관리자의 텔레그램 ID를 입력하세요
+  '5172197798' // 관리자의 텔레그램 ID
 ];
 
 export const isAdminUser = (userId: string | number): boolean => {
