@@ -6,8 +6,7 @@ import { isAdminUser } from '@/config/admin';
 
 // 유틸리티 함수들을 컴포넌트 밖으로 이동
 const getCurrentDateTime = () => {
-  const now = new Date();
-  const koreanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+  const koreanTime = new Date(Date.now() + (9 * 60 * 60 * 1000)); // UTC+9
   const year = koreanTime.getFullYear();
   const month = String(koreanTime.getMonth() + 1).padStart(2, '0');
   const day = String(koreanTime.getDate()).padStart(2, '0');
@@ -117,6 +116,31 @@ const EventGame = () => {
     const webapp = window.Telegram?.WebApp;
     if (!webapp) return;
   
+    // validateResponse 함수 정의
+    const validateResponse = (eventId: string, userId: string): boolean => {
+      const event = events.find(e => e.id === eventId);
+      if (!event?.isActive) {
+        alert('종료된 이벤트에는 답변할 수 없습니다.');
+        return false;
+      }
+  
+      const existingResponse = responses.find(
+        r => r.eventId === eventId && r.userId === userId && r.id !== editingResponseId
+      );
+      
+      if (existingResponse) {
+        alert('이미 답변을 제출하셨습니다. 수정하시려면 답변 목록에서 수정 버튼을 클릭해주세요.');
+        return false;
+      }
+  
+      return true;
+    };
+  
+    // generateId 함수 정의
+    const generateId = () => {
+      return Math.random().toString(36).substr(2, 9);
+    };
+  
     const handleSubmitResponse = () => {
       if (!selectedEventId || !userAnswer) {
         alert('답변을 입력해주세요.');
@@ -183,7 +207,7 @@ const EventGame = () => {
       webapp.MainButton.offClick();
     };
   }, [selectedEvent, editingResponseId, selectedEventId, userAnswer, userId, events, responses]);
-
+  
   // 뒤로가기 버튼 상태 업데이트
   useEffect(() => {
     const webapp = window.Telegram?.WebApp;

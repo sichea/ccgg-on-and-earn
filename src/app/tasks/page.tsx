@@ -12,8 +12,6 @@ import {
   Link
 } from 'lucide-react';
 import { isAdminUser } from '@/config/admin';
-import { initTelegramWebApp } from '@/lib/telegram';
-
 
 
 interface Task {
