@@ -11,7 +11,7 @@ import {
   X,
   Link
 } from 'lucide-react';
-import { isAdminUser } from '@/config/admin';
+import { isAdminUser, ADMIN_USER_IDS } from '@/config/admin';
 
 
 interface Task {
@@ -53,6 +53,19 @@ const TaskList = () => {
     reward: { points: 0, coins: 0 },
     action: 'Join'
   });
+
+
+  useEffect(() => {
+    const webapp = window.Telegram?.WebApp;
+    if (webapp?.initDataUnsafe?.user?.id) {
+      const userId = webapp.initDataUnsafe.user.id;
+      console.log('TaskList - Current User ID:', userId);
+      console.log('TaskList - Is Admin Check:', isAdminUser(userId.toString()));
+      console.log('TaskList - Admin IDs:', ADMIN_USER_IDS);
+    } else {
+      console.log('TaskList - No user data found');
+    }
+  }, []);
 
   useEffect(() => {
     const webapp = window.Telegram?.WebApp;

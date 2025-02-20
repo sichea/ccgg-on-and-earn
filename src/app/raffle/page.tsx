@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import { Users, ListTodo, Trophy, Calendar } from 'lucide-react'
 import { initTelegramWebApp } from '@/lib/telegram'
-import { isAdminUser } from '@/config/admin';
+import { isAdminUser, ADMIN_USER_IDS } from '@/config/admin';
 
 // 유틸리티 함수들을 컴포넌트 밖으로 이동
 const getCurrentDateTime = () => {
@@ -70,6 +70,19 @@ const EventGame = () => {
   const [selectedEventId, setSelectedEventId] = useState('');
   const [userAnswer, setUserAnswer] = useState('');
   const [userId, setUserId] = useState('');
+
+  useEffect(() => {
+    const webapp = window.Telegram?.WebApp;
+    if (webapp?.initDataUnsafe?.user?.id) {
+      const userId = webapp.initDataUnsafe.user.id;
+      console.log('RaffleGame - Current User ID:', userId);
+      console.log('RaffleGame - Is Admin Check:', isAdminUser(userId.toString()));
+      console.log('RaffleGame - Admin IDs:', ADMIN_USER_IDS);
+    } else {
+      console.log('RaffleGame - No user data found');
+    }
+  }, []);
+
 
   // 텔레그램 웹앱 초기화
   useEffect(() => {
