@@ -6,6 +6,7 @@ import { isAdminUser } from '@/config/admin';
 
 // 유틸리티 함수들을 컴포넌트 밖으로 이동
 const getCurrentDateTime = () => {
+  // now 변수를 사용하지 않고 직접 new Date()를 사용
   const koreanTime = new Date(Date.now() + (9 * 60 * 60 * 1000)); // UTC+9
   const year = koreanTime.getFullYear();
   const month = String(koreanTime.getMonth() + 1).padStart(2, '0');
@@ -17,15 +18,14 @@ const getCurrentDateTime = () => {
 };
 
 const formatDateTime = (dateString: string) => {
-  const date = new Date(dateString);
-  const koreanTime = new Date(date.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+  const koreanTime = new Date(new Date(dateString).getTime() + (9 * 60 * 60 * 1000)); // UTC+9
   const year = koreanTime.getFullYear();
   const month = String(koreanTime.getMonth() + 1).padStart(2, '0');
   const day = String(koreanTime.getDate()).padStart(2, '0');
   const hours = String(koreanTime.getHours()).padStart(2, '0');
   const minutes = String(koreanTime.getMinutes()).padStart(2, '0');
-
-  return `${year}-${month}-${day} ${hours}:${minutes}`;
+  
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
 interface Event {
