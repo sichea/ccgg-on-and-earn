@@ -45,6 +45,7 @@ export const initTelegramWebApp = () => {
       // 디버깅 정보를 localStorage에 저장
       localStorage.setItem('webappDebug', JSON.stringify({
         hasWebApp: true,
+        environment: 'Telegram WebApp',
         hasUser: !!webapp.initDataUnsafe?.user,
         userId: webapp.initDataUnsafe?.user?.id,
         timestamp: new Date().toISOString()
@@ -55,18 +56,19 @@ export const initTelegramWebApp = () => {
       return webapp;
     }
 
-    // WebApp이 없는 경우도 기록
+    // Telegram WebApp 환경이 아닌 경우
     localStorage.setItem('webappDebug', JSON.stringify({
       hasWebApp: false,
-      error: 'WebApp not found',
+      environment: 'Browser',
+      error: 'This app must be opened in Telegram WebApp environment',
       timestamp: new Date().toISOString()
     }));
 
     return null;
   } catch (error) {
-    // 에러 발생 시 기록
     localStorage.setItem('webappDebug', JSON.stringify({
       hasWebApp: false,
+      environment: 'Unknown',
       error: error instanceof Error ? error.message : 'Unknown error',
       timestamp: new Date().toISOString()
     }));
