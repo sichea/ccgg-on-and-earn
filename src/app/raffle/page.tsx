@@ -221,7 +221,6 @@ const EventGame = () => {
   }, [selectedEvent]);
 
   // 현재 시간 이후만 선택 가능하도록 최소 날짜 설정
-  const now = new Date();
   const minDateTime = getCurrentDateTime();
 
   const getFilteredEvents = () => {
