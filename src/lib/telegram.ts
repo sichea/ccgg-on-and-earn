@@ -39,40 +39,49 @@ declare global {
 
 export const initTelegramWebApp = () => {
   try {
+    // 타입 체크를 더 엄격하게
+    const debugInfo = {
+      timestamp: new Date().toISOString(),
+      isTelegramWebView: false,
+      userInfo: null as { id: number; username?: string } | null
+    };
+
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
       const webapp = window.Telegram.WebApp;
-      
-      // 디버깅 정보를 localStorage에 저장
-      localStorage.setItem('webappDebug', JSON.stringify({
-        hasWebApp: true,
-        environment: 'Telegram WebApp',
-        hasUser: !!webapp.initDataUnsafe?.user,
-        userId: webapp.initDataUnsafe?.user?.id,
-        timestamp: new Date().toISOString()
-      }));
+      debugInfo.isTelegramWebView = true;
 
-      webapp.ready();
-      webapp.expand();
+      // 웹앱 초기화
+      try {
+        webapp.ready();
+        webapp.expand();
+      } catch (e) {
+        console.error('WebApp initialization error:', e);
+      }
+
+      // 유저 정보 체크
+      if (webapp.initDataUnsafe?.user) {
+        debugInfo.userInfo = {
+          id: webapp.initDataUnsafe.user.id,
+          username: webapp.initDataUnsafe.user.username
+        };
+      }
+
+      // 디버그 정보 저장
+      localStorage.setItem('webappDebug', JSON.stringify(debugInfo));
+      
       return webapp;
     }
 
-    // Telegram WebApp 환경이 아닌 경우
+    // 디버그 정보 저장
     localStorage.setItem('webappDebug', JSON.stringify({
-      hasWebApp: false,
-      environment: 'Browser',
-      error: 'This app must be opened in Telegram WebApp environment',
-      timestamp: new Date().toISOString()
+      ...debugInfo,
+      error: 'Not in Telegram WebApp environment'
     }));
 
     return null;
-  } catch (error) {
-    localStorage.setItem('webappDebug', JSON.stringify({
-      hasWebApp: false,
-      environment: 'Unknown',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString()
-    }));
 
+  } catch (error) {
+    console.error('Telegram WebApp initialization error:', error);
     return null;
   }
 };
