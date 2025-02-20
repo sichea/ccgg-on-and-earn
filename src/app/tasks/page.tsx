@@ -59,11 +59,14 @@ const TaskList = () => {
     const webapp = window.Telegram?.WebApp;
     if (webapp?.initDataUnsafe?.user?.id) {
       const userId = webapp.initDataUnsafe.user.id;
-      console.log('TaskList - Current User ID:', userId);
-      console.log('TaskList - Is Admin Check:', isAdminUser(userId.toString()));
-      console.log('TaskList - Admin IDs:', ADMIN_USER_IDS);
+      alert(`
+        Debug Info:
+        User ID: ${userId}
+        Is Admin Check: ${isAdminUser(userId.toString())}
+        Admin IDs: ${ADMIN_USER_IDS.join(', ')}
+      `);
     } else {
-      console.log('TaskList - No user data found');
+      alert('No user data found');
     }
   }, []);
 

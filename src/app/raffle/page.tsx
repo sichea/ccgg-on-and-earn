@@ -4,6 +4,7 @@ import { Users, ListTodo, Trophy, Calendar } from 'lucide-react'
 import { initTelegramWebApp } from '@/lib/telegram'
 import { isAdminUser, ADMIN_USER_IDS } from '@/config/admin';
 
+
 // 유틸리티 함수들을 컴포넌트 밖으로 이동
 const getCurrentDateTime = () => {
   // now 변수를 사용하지 않고 직접 new Date()를 사용
@@ -75,11 +76,14 @@ const EventGame = () => {
     const webapp = window.Telegram?.WebApp;
     if (webapp?.initDataUnsafe?.user?.id) {
       const userId = webapp.initDataUnsafe.user.id;
-      console.log('RaffleGame - Current User ID:', userId);
-      console.log('RaffleGame - Is Admin Check:', isAdminUser(userId.toString()));
-      console.log('RaffleGame - Admin IDs:', ADMIN_USER_IDS);
+      alert(`
+        Debug Info:
+        User ID: ${userId}
+        Is Admin Check: ${isAdminUser(userId.toString())}
+        Admin IDs: ${ADMIN_USER_IDS.join(', ')}
+      `);
     } else {
-      console.log('RaffleGame - No user data found');
+      alert('No user data found');
     }
   }, []);
 
