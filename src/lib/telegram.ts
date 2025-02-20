@@ -38,13 +38,41 @@ declare global {
 }
 
 export const initTelegramWebApp = () => {
-  if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-    const webapp = window.Telegram.WebApp;
-    webapp.ready();
-    webapp.expand();
-    return webapp;
+  try {
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+      const webapp = window.Telegram.WebApp;
+      
+      // 디버깅 정보를 localStorage에 저장
+      localStorage.setItem('webappDebug', JSON.stringify({
+        hasWebApp: true,
+        hasUser: !!webapp.initDataUnsafe?.user,
+        userId: webapp.initDataUnsafe?.user?.id,
+        timestamp: new Date().toISOString()
+      }));
+
+      webapp.ready();
+      webapp.expand();
+      return webapp;
+    }
+
+    // WebApp이 없는 경우도 기록
+    localStorage.setItem('webappDebug', JSON.stringify({
+      hasWebApp: false,
+      error: 'WebApp not found',
+      timestamp: new Date().toISOString()
+    }));
+
+    return null;
+  } catch (error) {
+    // 에러 발생 시 기록
+    localStorage.setItem('webappDebug', JSON.stringify({
+      hasWebApp: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    }));
+
+    return null;
   }
-  return null;
 };
 
 type TelegramUser = {

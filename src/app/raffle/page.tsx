@@ -72,36 +72,38 @@ const EventGame = () => {
   const [userAnswer, setUserAnswer] = useState('');
   const [userId, setUserId] = useState('');
 
-  useEffect(() => {
-    const webapp = window.Telegram?.WebApp;
-    if (webapp?.initDataUnsafe?.user?.id) {
-      const userId = webapp.initDataUnsafe.user.id;
-      alert(`
-        Debug Info:
-        User ID: ${userId}
-        Is Admin Check: ${isAdminUser(userId.toString())}
-        Admin IDs: ${ADMIN_USER_IDS.join(', ')}
-      `);
-    } else {
-      alert('No user data found');
-    }
-  }, []);
 
 
   // 텔레그램 웹앱 초기화
   useEffect(() => {
     const webapp = initTelegramWebApp();
     
+    // 디버그 정보 확인
+    const debugInfo = localStorage.getItem('webappDebug');
+    if (debugInfo) {
+      alert('Raffle Debug Info: ' + debugInfo);
+    }
+    
     if (webapp) {
       if (webapp.initDataUnsafe?.user) {
         const telegramUser = webapp.initDataUnsafe.user;
         const userId = telegramUser.id.toString();
+        
+        // 디버그용 alert
+        alert(`
+          Debug Info:
+          User ID: ${userId}
+          Is Admin Check: ${isAdminUser(userId)}
+          Admin IDs: ${ADMIN_USER_IDS.join(', ')}
+        `);
         
         // userId 설정
         setUserId(userId);
         
         // 관리자 권한 체크
         setIsAdmin(isAdminUser(userId));
+      } else {
+        alert('No user data found');
       }
 
       // 뒤로가기 버튼 핸들러

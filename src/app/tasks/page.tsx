@@ -12,6 +12,8 @@ import {
   Link
 } from 'lucide-react';
 import { isAdminUser, ADMIN_USER_IDS } from '@/config/admin';
+import { initTelegramWebApp } from '@/lib/telegram';
+
 
 
 interface Task {
@@ -56,25 +58,25 @@ const TaskList = () => {
 
 
   useEffect(() => {
-    const webapp = window.Telegram?.WebApp;
+    const webapp = initTelegramWebApp();
+    
+    // 디버그 정보 확인
+    const debugInfo = localStorage.getItem('webappDebug');
+    if (debugInfo) {
+      alert('Tasks Debug Info: ' + debugInfo);
+    }
+    
     if (webapp?.initDataUnsafe?.user?.id) {
-      const userId = webapp.initDataUnsafe.user.id;
+      const userId = webapp.initDataUnsafe.user.id.toString();
       alert(`
         Debug Info:
         User ID: ${userId}
-        Is Admin Check: ${isAdminUser(userId.toString())}
+        Is Admin Check: ${isAdminUser(userId)}
         Admin IDs: ${ADMIN_USER_IDS.join(', ')}
       `);
+      setIsAdmin(isAdminUser(userId));
     } else {
       alert('No user data found');
-    }
-  }, []);
-
-  useEffect(() => {
-    const webapp = window.Telegram?.WebApp;
-    if (webapp?.initDataUnsafe?.user?.id) {
-      const userId = webapp.initDataUnsafe.user.id.toString();
-      setIsAdmin(isAdminUser(userId));
     }
   }, []);
 
