@@ -48,7 +48,7 @@ function App() {
           setTelegramUser(user);
           
           // 관리자 확인 (텔레그램 ID 기반)
-          const adminIds = ['ADMIN_TELEGRAM_ID_1', 'ADMIN_TELEGRAM_ID_2']; // 관리자 텔레그램 ID 목록
+          const adminIds = ['5172197798', 'ADMIN_TELEGRAM_ID_2']; // 관리자 텔레그램 ID 목록
           setIsAdmin(adminIds.includes(String(user.id)));
         } else {
           console.log('텔레그램 사용자 정보 없음, 개발 모드 확인');
