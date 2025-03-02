@@ -1,4 +1,4 @@
-/* src/components/EventDetail.css */
+/* src/features/raffle/pages/EventDetail.css */
 .event-detail {
   padding: 1rem 0;
 }
@@ -9,7 +9,7 @@
 
 .back-button {
   background-color: transparent;
-  color: #000000;
+  color: var(--tg-theme-text-color);
   border: none;
   padding: 0.5rem 0;
   font-size: 0.9rem;
@@ -18,21 +18,109 @@
   align-items: center;
 }
 
-.event-detail h1 {
+/* 관리자 액션 버튼 스타일 */
+.admin-actions {
+  display: flex;
+  gap: 0.8rem;
   margin-bottom: 1rem;
 }
 
-.event-info {
-  background-color: white;
+.edit-btn, .delete-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.edit-btn {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.delete-btn {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+/* 이벤트 수정 폼 스타일 */
+.edit-event-form {
+  background-color: var(--dark-card-bg);
   border-radius: 12px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--dark-border-color);
+}
+
+.edit-event-form h2 {
+  margin-bottom: 1.5rem;
+  font-size: 1.4rem;
+  color: var(--tg-theme-text-color);
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--tg-theme-text-color);
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid var(--dark-border-color);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  background-color: var(--tg-theme-secondary-bg-color);
+  color: var(--tg-theme-text-color);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cancel-btn {
+  background-color: var(--gray-color);
+  color: var(--tg-theme-hint-color);
+}
+
+.submit-btn {
+  background-color: var(--primary-color);
+  flex: 1;
+  color: white;
+}
+
+.event-detail h1 {
+  margin-bottom: 1rem;
+  color: var(--tg-theme-text-color);
+}
+
+.event-info {
+  background-color: var(--dark-card-bg);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--dark-border-color);
 }
 
 .event-description {
   margin-bottom: 1.5rem;
   line-height: 1.6;
+  color: var(--tg-theme-text-color);
 }
 
 .event-meta {
@@ -40,70 +128,12 @@
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 0.8rem;
   padding-top: 1rem;
-  border-top: 1px solid var(--gray-color);
+  border-top: 1px solid var(--dark-border-color);
 }
 
 .event-meta p {
   font-size: 0.9rem;
-  color: var(--tg-theme-hint-color, #999999);
-}
-
-.participate-btn {
-  display: block;
-  width: 100%;
-  padding: 0.8rem;
-  margin-bottom: 1rem;
-  border-radius: 8px;
-  background-color: var(--primary-color);
-  color: white;
-  font-weight: 500;
-  text-align: center;
-}
-
-.participate-btn.cancel {
-  background-color: var(--danger-color);
-}
-
-.draw-btn {
-  display: block;
-  width: 100%;
-  padding: 0.8rem;
-  margin-bottom: 1.5rem;
-  border-radius: 8px;
-  background-color: var(--warning-color);
-  color: white;
-  font-weight: 500;
-  text-align: center;
-}
-
-.winners-section {
-  background-color: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  text-align: center;
-}
-
-.winners-section h2 {
-  margin-bottom: 1rem;
-  color: var(--success-color);
-}
-
-.winners-list {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.8rem;
-}
-
-.winner-item {
-  background-color: var(--gray-color);
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-weight: 500;
+  color: var(--tg-theme-hint-color);
 }
 
 .event-status {
@@ -121,25 +151,59 @@
 .event-ended-notice {
   margin-top: 1rem;
   padding: 0.8rem;
-  background-color: #fff8e1;
+  background-color: rgba(249, 168, 37, 0.1);
   border-left: 3px solid var(--warning-color);
   border-radius: 4px;
+  color: var(--tg-theme-text-color);
 }
 
-.comments-section {
-  background-color: white;
+.draw-btn {
+  display: block;
+  width: 100%;
+  padding: 0.8rem;
+  margin-bottom: 1.5rem;
+  border-radius: 8px;
+  background-color: var(--warning-color);
+  color: white;
+  font-weight: 500;
+  text-align: center;
+}
+
+.winners-section {
+  background-color: var(--dark-card-bg);
   border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  border: 1px solid var(--dark-border-color);
 }
 
-.comments-section h2 {
+.winners-section h2 {
   margin-bottom: 1rem;
+  color: var(--success-color);
+}
+
+.winners-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.8rem;
+}
+
+.winner-item {
+  background-color: var(--tg-theme-secondary-bg-color);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 500;
+  color: var(--tg-theme-text-color);
 }
 
 .comment-info {
   margin-bottom: 1rem;
-  color: #666666;
+  color: var(--tg-theme-hint-color);
   font-size: 0.9rem;
 }
 
@@ -149,12 +213,27 @@
   margin-bottom: 1.5rem;
 }
 
+.comments-section {
+  background-color: var(--dark-card-bg);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--dark-border-color);
+}
+
+.comments-section h2 {
+  margin-bottom: 1rem;
+  color: var(--tg-theme-text-color);
+}
+
 .comment-form input {
   flex: 1;
   padding: 0.8rem;
-  border: 1px solid var(--gray-color);
+  border: 1px solid var(--dark-border-color);
   border-radius: 8px;
   font-size: 1rem;
+  background-color: var(--tg-theme-secondary-bg-color);
+  color: var(--tg-theme-text-color);
 }
 
 .comment-form button {
@@ -169,8 +248,9 @@
 
 .comment-item {
   padding: 1rem;
-  background-color: var(--gray-color);
+  background-color: var(--tg-theme-secondary-bg-color);
   border-radius: 8px;
+  border: 1px solid var(--dark-border-color);
 }
 
 .comment-header {
@@ -179,19 +259,24 @@
   margin-bottom: 0.5rem;
 }
 
+.comment-header strong {
+  color: var(--tg-theme-text-color);
+}
+
 .comment-time {
   font-size: 0.8rem;
-  color: var(--tg-theme-hint-color, #999999);
+  color: var(--tg-theme-hint-color);
 }
 
 .comment-text {
   line-height: 1.5;
+  color: var(--tg-theme-text-color);
 }
 
 .no-comments {
   text-align: center;
   padding: 1.5rem;
-  color: var(--tg-theme-hint-color, #999999);
+  color: var(--tg-theme-hint-color);
 }
 
 .error {
@@ -203,5 +288,5 @@
 .loading {
   text-align: center;
   padding: 2rem;
-  color: var(--tg-theme-hint-color, #999999);
+  color: var(--tg-theme-hint-color);
 }

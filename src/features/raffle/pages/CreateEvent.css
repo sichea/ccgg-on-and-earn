@@ -1,18 +1,22 @@
-/* src/components/CreateEvent.css */
+/* src/features/raffle/pages/CreateEvent.css */
 .create-event-container {
   padding: 1rem 0;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .create-event-container h1 {
   margin-bottom: 1.5rem;
   text-align: center;
+  color: var(--tg-theme-text-color);
 }
 
 .event-form {
-  background-color: white;
+  background-color: var(--dark-card-bg);
   border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--dark-border-color);
 }
 
 .form-group {
@@ -23,16 +27,19 @@
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
+  color: var(--tg-theme-text-color);
 }
 
 .form-group input,
 .form-group textarea {
   width: 100%;
   padding: 0.8rem;
-  border: 1px solid var(--gray-color);
+  border: 1px solid var(--dark-border-color);
   border-radius: 8px;
   font-size: 1rem;
   font-family: inherit;
+  background-color: var(--tg-theme-secondary-bg-color);
+  color: var(--tg-theme-text-color);
 }
 
 .form-group textarea {
@@ -48,20 +55,35 @@
 
 .cancel-btn {
   background-color: var(--gray-color);
-  color: var(--tg-theme-hint-color, #999999);
+  color: var(--tg-theme-hint-color);
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
 }
 
 .submit-btn {
   background-color: var(--primary-color);
+  color: white;
   flex: 1;
+  padding: 0.8rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.submit-btn:disabled {
+  background-color: var(--gray-color);
+  color: var(--tg-theme-hint-color);
+  cursor: not-allowed;
 }
 
 .error-container {
   text-align: center;
   padding: 2rem;
-  background-color: white;
+  background-color: var(--dark-card-bg);
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--dark-border-color);
 }
 
 .error-container h2 {
@@ -71,5 +93,31 @@
 
 .error-container p {
   margin-bottom: 1.5rem;
-  color: var(--tg-theme-hint-color, #999999);
+  color: var(--tg-theme-hint-color);
+}
+
+.error-container button {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* 다크모드 추가 수정 */
+input[type="datetime-local"],
+input[type="number"] {
+  color-scheme: dark; /* 날짜/시간 선택기에 다크 테마 적용 */
+}
+
+input:focus,
+textarea:focus {
+  outline: 1px solid var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+::placeholder {
+  color: var(--tg-theme-hint-color);
+  opacity: 0.7;
 }

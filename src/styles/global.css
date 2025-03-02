@@ -1,17 +1,21 @@
 /* src/styles/global.css */
 :root {
-  --tg-theme-bg-color: #ffffff;
-  --tg-theme-text-color: #000000;
-  --tg-theme-hint-color: #666666;
-  --tg-theme-link-color: #2678b6;
-  --tg-theme-button-color: #40a7e3;
+  /* 다크 모드 색상 테마 */
+  --tg-theme-bg-color: #1c2333;
+  --tg-theme-secondary-bg-color: #232d42;
+  --tg-theme-text-color: #ffffff;
+  --tg-theme-hint-color: #a0a0a0;
+  --tg-theme-link-color: #58a6ff;
+  --tg-theme-button-color: #2678b6;
   --tg-theme-button-text-color: #ffffff;
   --primary-color: #40a7e3;
   --secondary-color: #5dc1f7;
   --success-color: #31b545;
   --danger-color: #e53935;
   --warning-color: #f9a825;
-  --gray-color: #f0f2f5;
+  --gray-color: #343a46;
+  --dark-card-bg: #232d42;
+  --dark-border-color: #393f4a;
 }
 
 * {
@@ -22,8 +26,8 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  background-color: var(--tg-theme-bg-color, #ffffff);
-  color: #000000;
+  background-color: var(--tg-theme-bg-color);
+  color: var(--tg-theme-text-color);
   line-height: 1.5;
 }
 
@@ -41,12 +45,12 @@ body {
 .loading {
   text-align: center;
   padding: 2rem;
-  color: var(--tg-theme-hint-color, #999999);
+  color: var(--tg-theme-hint-color);
 }
 
 button {
-  background-color: var(--tg-theme-button-color, #40a7e3);
-  color: var(--tg-theme-button-text-color, #ffffff);
+  background-color: var(--tg-theme-button-color);
+  color: var(--tg-theme-button-text-color);
   border: none;
   border-radius: 8px;
   padding: 0.5rem 1rem;
@@ -60,11 +64,58 @@ button:hover {
 }
 
 button:disabled {
-  background-color: #ccc;
+  background-color: #4a515e;
+  color: #8c8c8c;
   cursor: not-allowed;
 }
 
 a {
-  color: var(--tg-theme-link-color, #2678b6);
+  color: var(--tg-theme-link-color);
   text-decoration: none;
+}
+
+/* 카드 스타일 재정의 */
+.event-card, .event-info, .comments-section, .winners-section, .edit-event-form {
+  background-color: var(--dark-card-bg);
+  border: 1px solid var(--dark-border-color);
+  color: var(--tg-theme-text-color);
+}
+
+/* 입력 필드 스타일 */
+input, textarea, select {
+  background-color: var(--tg-theme-secondary-bg-color);
+  color: var(--tg-theme-text-color);
+  border: 1px solid var(--dark-border-color);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--tg-theme-hint-color);
+}
+
+/* 코멘트 아이템 배경색 */
+.comment-item {
+  background-color: var(--tg-theme-secondary-bg-color);
+}
+
+/* 이벤트 상태 색상 */
+.event-status.active {
+  color: var(--success-color);
+}
+
+.event-status.ended {
+  color: var(--danger-color);
+}
+
+/* 네비게이션 바 스타일 */
+.navigation-bar {
+  background-color: var(--dark-card-bg);
+  border-top: 1px solid var(--dark-border-color);
+}
+
+.nav-item {
+  color: var(--tg-theme-hint-color);
+}
+
+.nav-item.active {
+  color: var(--primary-color);
 }

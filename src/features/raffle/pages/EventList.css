@@ -1,4 +1,4 @@
-
+/* src/features/raffle/pages/EventList.css */
 .home-container {
   padding: 1rem 0;
 }
@@ -6,6 +6,7 @@
 .home-container h1 {
   margin-bottom: 1.5rem;
   text-align: center;
+  color: var(--tg-theme-text-color);
 }
 
 .admin-actions {
@@ -30,25 +31,26 @@
 
 .event-card {
   display: block;
-  background-color: white;
+  background-color: var(--dark-card-bg);
   border-radius: 12px;
   padding: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid var(--dark-border-color);
 }
 
 .event-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .event-card h2 {
   margin-bottom: 0.5rem;
-  color: var(--tg-theme-text-color, #000000);
+  color: var(--tg-theme-text-color);
 }
 
 .event-description {
-  color: var(--tg-theme-hint-color, #999999);
+  color: var(--tg-theme-hint-color);
   margin-bottom: 1rem;
 }
 
@@ -56,6 +58,7 @@
   display: flex;
   justify-content: space-between;
   margin-bottom: 0.5rem;
+  color: var(--tg-theme-hint-color);
 }
 
 .event-status {
@@ -66,30 +69,30 @@
 }
 
 .event-status.active {
-  background-color: var(--success-color);
-  color: white;
+  background-color: rgba(49, 181, 69, 0.2);
+  color: var(--success-color);
 }
 
 .event-status.ended {
-  background-color: var(--gray-color);
-  color: var(--tg-theme-hint-color, #999999);
+  background-color: rgba(229, 57, 53, 0.2);
+  color: var(--danger-color);
 }
 
 .event-deadline {
   font-size: 0.9rem;
-  color: var(--tg-theme-hint-color, #999999);
+  color: var(--tg-theme-hint-color);
 }
 
 .no-events {
   text-align: center;
   padding: 2rem;
-  background-color: var(--gray-color);
+  background-color: var(--tg-theme-secondary-bg-color);
   border-radius: 8px;
-  color: var(--tg-theme-hint-color, #999999);
+  color: var(--tg-theme-hint-color);
 }
 
 .loading {
   text-align: center;
   padding: 2rem;
-  color: var(--tg-theme-hint-color, #999999);
+  color: var(--tg-theme-hint-color);
 }
