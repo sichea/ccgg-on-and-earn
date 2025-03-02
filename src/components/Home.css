@@ -1,0 +1,95 @@
+/* src/components/Home.css */
+.home-container {
+  padding: 1rem 0;
+}
+
+.home-container h1 {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.admin-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.create-btn {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.event-card {
+  display: block;
+  background-color: white;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.event-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.event-card h2 {
+  margin-bottom: 0.5rem;
+  color: var(--tg-theme-text-color, #000000);
+}
+
+.event-description {
+  color: var(--tg-theme-hint-color, #999999);
+  margin-bottom: 1rem;
+}
+
+.event-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.event-status {
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.event-status.active {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.event-status.ended {
+  background-color: var(--gray-color);
+  color: var(--tg-theme-hint-color, #999999);
+}
+
+.event-deadline {
+  font-size: 0.9rem;
+  color: var(--tg-theme-hint-color, #999999);
+}
+
+.no-events {
+  text-align: center;
+  padding: 2rem;
+  background-color: var(--gray-color);
+  border-radius: 8px;
+  color: var(--tg-theme-hint-color, #999999);
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--tg-theme-hint-color, #999999);
+}
