@@ -3,6 +3,21 @@
   padding: 1rem 0;
 }
 
+.back-button-container {
+  margin-bottom: 1rem;
+}
+
+.back-button {
+  background-color: transparent;
+  color: #000000;
+  border: none;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
 .event-detail h1 {
   margin-bottom: 1rem;
 }
@@ -91,6 +106,26 @@
   font-weight: 500;
 }
 
+.event-status {
+  font-weight: 500;
+}
+
+.event-status.active {
+  color: var(--success-color);
+}
+
+.event-status.ended {
+  color: var(--danger-color);
+}
+
+.event-ended-notice {
+  margin-top: 1rem;
+  padding: 0.8rem;
+  background-color: #fff8e1;
+  border-left: 3px solid var(--warning-color);
+  border-radius: 4px;
+}
+
 .comments-section {
   background-color: white;
   border-radius: 12px;
@@ -100,6 +135,12 @@
 
 .comments-section h2 {
   margin-bottom: 1rem;
+}
+
+.comment-info {
+  margin-bottom: 1rem;
+  color: #666666;
+  font-size: 0.9rem;
 }
 
 .comment-form {
