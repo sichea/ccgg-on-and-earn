@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../../../services/firebase';
 import './CreateEvent.css';
 
 const CreateEvent = ({ telegramUser }) => {

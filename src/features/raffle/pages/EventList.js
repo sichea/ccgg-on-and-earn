@@ -1,9 +1,8 @@
-// src/components/Home.js
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { db } from '../firebase';
-import './Home.css';
+import { db } from '../../../services/firebase';
+import './EventList.css';
 
 const Home = ({ telegramUser, isAdmin }) => {
   const [events, setEvents] = useState([]);

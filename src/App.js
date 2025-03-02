@@ -1,11 +1,9 @@
 // src/App.js
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-// 컴포넌트 임포트
-import Home from './components/Home';
-import EventDetail from './components/EventDetail';
-import CreateEvent from './components/CreateEvent';
-import './App.css';
+import { BrowserRouter as Router } from 'react-router-dom';
+import NavigationBar from './components/layout/NavigationBar';
+import AppRoutes from './routes';
+import './styles/global.css';
 
 function App() {
   const [telegramUser, setTelegramUser] = useState(null);
@@ -26,7 +24,9 @@ function App() {
       document.body.appendChild(script);
 
       return () => {
-        document.body.removeChild(script);
+        if (script.parentNode) {
+          document.body.removeChild(script);
+        }
       };
     }
   }, []);
@@ -34,24 +34,20 @@ function App() {
   // 텔레그램 앱 초기화 함수
   const initTelegramApp = () => {
     try {
-      const tgApp = window.Telegram.WebApp;
-      
+      const tgApp = window.Telegram && window.Telegram.WebApp;
       if (tgApp) {
-        console.log('Telegram WebApp 초기화 시작');
         tgApp.ready();
         tgApp.expand();
 
         // 사용자 정보 가져오기
         if (tgApp.initDataUnsafe && tgApp.initDataUnsafe.user) {
           const user = tgApp.initDataUnsafe.user;
-          console.log('텔레그램 사용자 정보 로드됨:', user);
           setTelegramUser(user);
           
-          // 관리자 확인 (텔레그램 ID 기반)
-          const adminIds = ['5172197798', 'ADMIN_TELEGRAM_ID_2']; // 관리자 텔레그램 ID 목록
+          // 관리자 확인
+          const adminIds = ['5172197798', 'ADMIN_TELEGRAM_ID_2']; 
           setIsAdmin(adminIds.includes(String(user.id)));
         } else {
-          console.log('텔레그램 사용자 정보 없음, 개발 모드 확인');
           // 개발 환경에서 테스트용 모의 사용자 설정
           if (process.env.NODE_ENV === 'development') {
             const mockUser = {
@@ -61,14 +57,12 @@ function App() {
               username: 'testuser',
               language_code: 'ko'
             };
-            console.log('개발 환경 모의 사용자 설정:', mockUser);
             setTelegramUser(mockUser);
             setIsAdmin(true); // 개발 환경에서는 관리자 권한 부여
           }
         }
       } else {
-        console.warn('Telegram WebApp 객체를 찾을 수 없음');
-        // 개발 환경에서 테스트용 모의 사용자 설정
+        // 개발 환경에서 모의 사용자 설정
         if (process.env.NODE_ENV === 'development') {
           const mockUser = {
             id: 12345678,
@@ -77,14 +71,13 @@ function App() {
             username: 'testuser',
             language_code: 'ko'
           };
-          console.log('개발 환경 모의 사용자 설정:', mockUser);
           setTelegramUser(mockUser);
-          setIsAdmin(true); // 개발 환경에서는 관리자 권한 부여
+          setIsAdmin(true);
         }
       }
     } catch (error) {
       console.error('텔레그램 WebApp 초기화 오류:', error);
-      // 개발 환경에서 테스트용 모의 사용자 설정
+      // 개발 환경에서 오류 시 모의 사용자 설정
       if (process.env.NODE_ENV === 'development') {
         const mockUser = {
           id: 12345678,
@@ -93,9 +86,8 @@ function App() {
           username: 'testuser',
           language_code: 'ko'
         };
-        console.log('오류 후 개발 환경 모의 사용자 설정:', mockUser);
         setTelegramUser(mockUser);
-        setIsAdmin(true); // 개발 환경에서는 관리자 권한 부여
+        setIsAdmin(true);
       }
     }
     
@@ -109,11 +101,12 @@ function App() {
   return (
     <Router>
       <div className="app">
-        <Routes>
-          <Route path="/" element={<Home telegramUser={telegramUser} isAdmin={isAdmin} />} />
-          <Route path="/event/:id" element={<EventDetail telegramUser={telegramUser} isAdmin={isAdmin} />} />
-          <Route path="/create" element={isAdmin ? <CreateEvent telegramUser={telegramUser} /> : <Home telegramUser={telegramUser} isAdmin={isAdmin} />} />
-        </Routes>
+        <div className="content-wrapper">
+          {/* AppRoutes 컴포넌트로 라우트 관리 */}
+          <AppRoutes telegramUser={telegramUser} isAdmin={isAdmin} />
+        </div>
+        {/* 네비게이션 바 */}
+        <NavigationBar />
       </div>
     </Router>
   );

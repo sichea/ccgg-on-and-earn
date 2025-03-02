@@ -4,7 +4,7 @@ import {
   doc, getDoc, updateDoc, arrayUnion, arrayRemove, deleteDoc,
   onSnapshot, Timestamp, collection, addDoc 
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../../../services/firebase';
 import './EventDetail.css';
 
 const EventDetail = ({ telegramUser, isAdmin }) => {

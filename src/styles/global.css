@@ -1,0 +1,70 @@
+/* src/styles/global.css */
+:root {
+  --tg-theme-bg-color: #ffffff;
+  --tg-theme-text-color: #000000;
+  --tg-theme-hint-color: #666666;
+  --tg-theme-link-color: #2678b6;
+  --tg-theme-button-color: #40a7e3;
+  --tg-theme-button-text-color: #ffffff;
+  --primary-color: #40a7e3;
+  --secondary-color: #5dc1f7;
+  --success-color: #31b545;
+  --danger-color: #e53935;
+  --warning-color: #f9a825;
+  --gray-color: #f0f2f5;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: var(--tg-theme-bg-color, #ffffff);
+  color: #000000;
+  line-height: 1.5;
+}
+
+.app {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
+  padding-bottom: 70px; /* 네비게이션 바 높이만큼 여백 */
+}
+
+.content-wrapper {
+  padding-bottom: 70px; /* 네비게이션 바 높이만큼 여백 */
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--tg-theme-hint-color, #999999);
+}
+
+button {
+  background-color: var(--tg-theme-button-color, #40a7e3);
+  color: var(--tg-theme-button-text-color, #ffffff);
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+a {
+  color: var(--tg-theme-link-color, #2678b6);
+  text-decoration: none;
+}
