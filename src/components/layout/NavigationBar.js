@@ -1,3 +1,4 @@
+// NavigationBar.js 원래 버전으로 복원
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './NavigationBar.css';
@@ -8,28 +9,22 @@ const NavigationBar = () => {
   
   // 현재 경로에 따라 활성화된 아이콘 변경
   const isActive = (path) => {
-    if (path === '/raffle' && location.pathname.startsWith('/raffle')) {
-      return true;
-    }
-    if (path === '/tasks' && location.pathname.startsWith('/tasks')) {
-      return true;
-    }
-    return location.pathname === path;
+    return location.pathname.startsWith(path);
   };
 
   return (
     <div className="navigation-bar">
       <div 
-        className={`nav-item ${isActive('/raffle') ? 'active' : ''}`}
-        onClick={() => navigate('/raffle')}
+        className={`nav-item ${isActive('/') ? 'active' : ''}`}
+        onClick={() => navigate('/')}
       >
         <div className="nav-icon">🎟️</div>
         <div className="nav-label">Raffle</div>
       </div>
       
       <div 
-        className={`nav-item ${isActive('/tasks') ? 'active' : ''}`}
-        onClick={() => navigate('/tasks')}
+        className={`nav-item ${isActive('/task') ? 'active' : ''}`}
+        onClick={() => navigate('/task')}
       >
         <div className="nav-icon">✅</div>
         <div className="nav-label">Tasks</div>

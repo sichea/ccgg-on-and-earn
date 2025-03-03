@@ -1,23 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import '../styles/FriendsStyles.css';
 import InvitationBonus from '../components/InvitationBonus';
 import RewardInfo from '../components/RewardInfo';
 import FriendList from '../components/FriendList';
 import InviteButton from '../components/InviteButton';
-import { getUserDocument, updateUserDocument } from '../../../utils/userUtils';
+import { getUserDocument } from '../../../utils/userUtils';
 
 // 친구 초대용 이미지 import (assets 폴더에 추가 필요)
 import friendsImage from '../../../assets/images/friends-characters.png';
 
-const Friends = () => {
+const Friends = ({ telegramUser }) => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const data = await getUserDocument();
+        // telegramUser prop 활용
+        const data = await getUserDocument(telegramUser);
         setUserData(data);
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -27,7 +27,7 @@ const Friends = () => {
     };
     
     fetchUserData();
-  }, []);
+  }, [telegramUser]);
   
   if (loading) {
     return <div className="loading">Loading...</div>;
