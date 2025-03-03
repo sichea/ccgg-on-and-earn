@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc, deleteDoc, arrayUnion, setDoc } from 'firebase/firestore';
 import { db } from '../../../services/firebase';
+import '../styles/TaskStyles.css';
 
-const TaskDetail = () => {
+const TaskDetail = ({ isAdmin, telegramUser }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [task, setTask] = useState(null);
@@ -14,12 +15,11 @@ const TaskDetail = () => {
   const [editData, setEditData] = useState({});
   
   // Telegram WebApp에서 사용자 정보 가져오기
-  const tg = window.Telegram?.WebApp;
-  const user = tg?.initDataUnsafe?.user;
-  const userId = user?.id || 'test-user-id';
+  const userId = telegramUser?.id || 'test-user-id';
   
-  // 관리자 체크 - 실제 구현 시 관리자 ID 목록을 확인하는 로직으로 대체
-  const isAdmin = true; // 테스트를 위해 임시로 true로 설정
+  // 관리자 권한은 App.js에서 전달받은 isAdmin 사용
+  // const adminIds = ['5172197798', 'ADMIN_TELEGRAM_ID_2']; 
+  // const isAdmin = telegramUser ? adminIds.includes(String(telegramUser.id)) : false;
   
   useEffect(() => {
     const fetchTask = async () => {
@@ -81,14 +81,14 @@ const TaskDetail = () => {
         // 사용자 문서가 없으면 새로 생성
         await setDoc(userRef, {
           userId: userId,
-          username: user?.username || '',
+          username: telegramUser?.username || '',
           points: task.reward || 0,
           createdAt: new Date(),
           updatedAt: new Date()
         });
       }
       
-      alert(`태스크 참여 완료! ${task.reward} mopi 획득!`);
+      alert(`태스크 참여 완료! ${task.reward} MOPI 획득!`);
       // 태스크 정보 갱신
       const updatedTaskSnap = await getDoc(taskRef);
       setTask({
@@ -153,60 +153,64 @@ const TaskDetail = () => {
   const participantsCount = task?.participants?.length || 0;
   
   if (loading) {
-    return <div className="p-4 text-white text-center">로딩 중...</div>;
+    return <div className="loading-text">로딩 중...</div>;
   }
   
   if (!task) {
-    return <div className="p-4 text-white text-center">태스크를 찾을 수 없습니다.</div>;
+    return <div className="empty-state">태스크를 찾을 수 없습니다.</div>;
   }
   
   // 편집 모드
   if (editing && isAdmin) {
     return (
-      <div className="p-4 bg-[#1c2333] min-h-screen">
-        <div className="flex items-center mb-4">
+      <div className="task-container">
+        <div className="task-header">
           <button 
             onClick={() => setEditing(false)}
-            className="text-white mr-2"
+            className="back-button"
+            style={{ background: 'none', border: 'none', color: 'white', fontSize: '1.2rem' }}
           >
-            &larr;
+            ←
           </button>
-          <h1 className="text-xl font-bold text-white">태스크 수정</h1>
+          <div className="task-title">태스크 수정</div>
         </div>
         
-        <form onSubmit={handleSubmitEdit} className="space-y-4">
-          <div>
-            <label className="block text-gray-400 mb-1">카테고리</label>
+        <form onSubmit={handleSubmitEdit} className="task-form">
+          <div className="form-group">
+            <label className="form-label" style={{ display: 'block', color: '#a0a0a0', marginBottom: '4px' }}>카테고리</label>
             <select
               name="category"
               value={editData.category}
               onChange={handleEditChange}
-              className="w-full bg-[#232d42] text-white p-3 rounded-md border border-[#393f4a]"
+              className="form-select"
+              style={{ padding: '12px', width: '100%', borderRadius: '6px', backgroundColor: '#232d42', color: 'white', border: '1px solid #393f4a', marginBottom: '16px' }}
             >
               <option value="CCGG">CCGG</option>
               <option value="Partners">Partners</option>
             </select>
           </div>
           
-          <div>
-            <label className="block text-gray-400 mb-1">태스크 제목</label>
+          <div className="form-group">
+            <label className="form-label" style={{ display: 'block', color: '#a0a0a0', marginBottom: '4px' }}>태스크 제목</label>
             <input
               type="text"
               name="title"
               value={editData.title}
               onChange={handleEditChange}
               placeholder="태스크 제목을 입력하세요"
-              className="w-full bg-[#232d42] text-white p-3 rounded-md border border-[#393f4a]"
+              className="form-input"
+              style={{ padding: '12px', width: '100%', borderRadius: '6px', backgroundColor: '#232d42', color: 'white', border: '1px solid #393f4a', marginBottom: '16px' }}
             />
           </div>
           
-          <div>
-            <label className="block text-gray-400 mb-1">플랫폼</label>
+          <div className="form-group">
+            <label className="form-label" style={{ display: 'block', color: '#a0a0a0', marginBottom: '4px' }}>플랫폼</label>
             <select
               name="platform"
               value={editData.platform}
               onChange={handleEditChange}
-              className="w-full bg-[#232d42] text-white p-3 rounded-md border border-[#393f4a]"
+              className="form-select"
+              style={{ padding: '12px', width: '100%', borderRadius: '6px', backgroundColor: '#232d42', color: 'white', border: '1px solid #393f4a', marginBottom: '16px' }}
             >
               <option value="Twitter">Twitter</option>
               <option value="Discord">Discord</option>
@@ -215,56 +219,59 @@ const TaskDetail = () => {
             </select>
           </div>
           
-          <div>
-            <label className="block text-gray-400 mb-1">링크</label>
+          <div className="form-group">
+            <label className="form-label" style={{ display: 'block', color: '#a0a0a0', marginBottom: '4px' }}>링크</label>
             <input
               type="url"
               name="link"
               value={editData.link}
               onChange={handleEditChange}
               placeholder="https://"
-              className="w-full bg-[#232d42] text-white p-3 rounded-md border border-[#393f4a]"
+              className="form-input"
+              style={{ padding: '12px', width: '100%', borderRadius: '6px', backgroundColor: '#232d42', color: 'white', border: '1px solid #393f4a', marginBottom: '16px' }}
             />
           </div>
           
-          <div>
-            <label className="block text-gray-400 mb-1">설명</label>
+          <div className="form-group">
+            <label className="form-label" style={{ display: 'block', color: '#a0a0a0', marginBottom: '4px' }}>설명</label>
             <textarea
               name="description"
               value={editData.description}
               onChange={handleEditChange}
               placeholder="태스크에 대한 설명을 입력하세요"
               rows="3"
-              className="w-full bg-[#232d42] text-white p-3 rounded-md border border-[#393f4a]"
+              className="form-textarea"
+              style={{ padding: '12px', width: '100%', borderRadius: '6px', backgroundColor: '#232d42', color: 'white', border: '1px solid #393f4a', marginBottom: '16px' }}
             ></textarea>
           </div>
           
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <label className="block text-gray-400 mb-1">포인트</label>
-              <input
-                type="number"
-                name="reward"
-                value={editData.reward}
-                onChange={handleEditChange}
-                min="0"
-                className="w-full bg-[#232d42] text-white p-3 rounded-md border border-[#393f4a]"
-              />
-            </div>
+          <div className="form-group">
+            <label className="form-label" style={{ display: 'block', color: '#a0a0a0', marginBottom: '4px' }}>보상 (MOPI)</label>
+            <input
+              type="number"
+              name="reward"
+              value={editData.reward}
+              onChange={handleEditChange}
+              min="0"
+              className="form-input"
+              style={{ padding: '12px', width: '100%', borderRadius: '6px', backgroundColor: '#232d42', color: 'white', border: '1px solid #393f4a', marginBottom: '16px' }}
+            />
           </div>
           
-          <div className="flex gap-4 mt-6">
+          <div className="form-actions" style={{ display: 'flex', gap: '16px', marginTop: '24px' }}>
             <button
               type="button"
               onClick={() => setEditing(false)}
-              className="flex-1 bg-gray-600 text-white p-3 rounded-md"
+              className="cancel-button"
+              style={{ flex: 1, padding: '12px', borderRadius: '6px', backgroundColor: '#4b5563', color: 'white', border: 'none', cursor: 'pointer' }}
             >
               취소
             </button>
             
             <button
               type="submit"
-              className="flex-1 bg-blue-600 text-white p-3 rounded-md"
+              className="submit-button"
+              style={{ flex: 1, padding: '12px', borderRadius: '6px', backgroundColor: '#2563eb', color: 'white', border: 'none', cursor: 'pointer' }}
             >
               저장
             </button>
@@ -276,76 +283,86 @@ const TaskDetail = () => {
   
   // 상세 보기 모드
   return (
-    <div className="p-4 bg-[#1c2333] min-h-screen">
-      <div className="flex items-center mb-4">
+    <div className="task-container">
+      <div className="task-header">
         <button 
           onClick={() => navigate('/task')}
-          className="text-white mr-2"
+          className="back-button"
+          style={{ background: 'none', border: 'none', color: 'white', fontSize: '1.2rem' }}
         >
-          &larr;
+          ←
         </button>
-        <h1 className="text-xl font-bold text-white">태스크 상세</h1>
+        <div className="task-title">태스크 상세</div>
       </div>
       
-      <div className="bg-[#232d42] rounded-lg p-4 shadow-md border border-[#393f4a]">
-        <div className="flex justify-between items-start mb-4">
+      <div style={{ backgroundColor: '#232d42', borderRadius: '6px', padding: '16px', marginTop: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
           <div>
-            <div className="text-white font-medium text-lg">{task.title}</div>
-            <div className="text-gray-400 text-sm mt-1">카테고리: {task.category}</div>
-            <div className="text-gray-400 text-sm">플랫폼: {task.platform}</div>
+            <div style={{ color: 'white', fontWeight: '500', fontSize: '1.125rem' }}>{task.title}</div>
+            <div style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: '4px' }}>카테고리: {task.category === 'CCGG' ? 'CCGG' : 'Partners'}</div>
+            <div style={{ color: '#94a3b8', fontSize: '0.875rem' }}>플랫폼: {task.platform}</div>
           </div>
           
-          <div className="flex items-center">
-            <div className="flex mr-2">
-              <img 
-                src="/images/mopi-coin.png" 
-                alt="mopi" 
-                className="w-5 h-5 mr-1" 
-              />
-              <span className="text-yellow-400 font-medium">{task.reward}</span>
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{ color: '#f9ca24', fontWeight: '500' }}>+{task.reward} MOPI</div>
           </div>
         </div>
         
-        <div className="text-white mt-4">
-          <h3 className="text-gray-400 mb-2">설명</h3>
-          <p className="whitespace-pre-line">{task.description}</p>
+        <div style={{ marginTop: '16px' }}>
+          <h3 style={{ color: '#94a3b8', marginBottom: '8px', fontSize: '0.875rem' }}>설명</h3>
+          <p style={{ color: 'white', whiteSpace: 'pre-line' }}>{task.description}</p>
         </div>
         
         {task.link && (
-          <div className="mt-4">
-            <h3 className="text-gray-400 mb-2">링크</h3>
+          <div style={{ marginTop: '16px' }}>
+            <h3 style={{ color: '#94a3b8', marginBottom: '8px', fontSize: '0.875rem' }}>링크</h3>
             <a 
               href={task.link} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-[#58a6ff] break-all"
+              style={{ color: '#3b82f6', wordBreak: 'break-all' }}
             >
               {task.link}
             </a>
           </div>
         )}
         
-        <div className="mt-4">
-          <h3 className="text-gray-400 mb-2">참여 현황</h3>
-          <p className="text-white">총 {participantsCount}명 참여</p>
+        <div style={{ marginTop: '16px' }}>
+          <h3 style={{ color: '#94a3b8', marginBottom: '8px', fontSize: '0.875rem' }}>참여 현황</h3>
+          <p style={{ color: 'white' }}>총 {participantsCount}명 참여</p>
         </div>
         
-        <div className="mt-6 flex gap-2">
+        <div style={{ marginTop: '24px', display: 'flex', gap: '8px' }}>
           {!hasJoined ? (
             <button
               onClick={handleJoin}
               disabled={joining}
-              className="flex-1 bg-blue-600 text-white py-2 rounded-md"
+              style={{ 
+                flex: '1', 
+                backgroundColor: '#2563eb', 
+                color: 'white', 
+                padding: '8px 0', 
+                borderRadius: '6px',
+                border: 'none',
+                cursor: 'pointer' 
+              }}
             >
-              {joining ? '처리 중...' : '참여하기'}
+              {joining ? '처리 중...' : 'Go'}
             </button>
           ) : (
             <button
               disabled
-              className="flex-1 bg-green-700 text-white py-2 rounded-md"
+              style={{ 
+                flex: '1', 
+                backgroundColor: '#16a34a', 
+                color: 'white', 
+                padding: '8px 0', 
+                borderRadius: '6px',
+                border: 'none',
+                cursor: 'not-allowed' 
+              }}
             >
-              참여 완료
+              완료
             </button>
           )}
           
@@ -353,14 +370,28 @@ const TaskDetail = () => {
             <>
               <button
                 onClick={() => setEditing(true)}
-                className="bg-gray-600 text-white px-4 py-2 rounded-md"
+                style={{ 
+                  backgroundColor: '#4b5563', 
+                  color: 'white', 
+                  padding: '8px 16px', 
+                  borderRadius: '6px',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
               >
                 수정
               </button>
               
               <button
                 onClick={handleDelete}
-                className="bg-red-600 text-white px-4 py-2 rounded-md"
+                style={{ 
+                  backgroundColor: '#dc2626', 
+                  color: 'white', 
+                  padding: '8px 16px', 
+                  borderRadius: '6px',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
               >
                 삭제
               </button>
