@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const InviteButton = ({ telegramUser }) => {
+  const [copySuccess, setCopySuccess] = useState(false);
+
   // 초대 코드 생성 함수
   const generateInviteCode = (userId) => {
     // 사용자 ID와 타임스탬프를 조합하여 코드 생성
@@ -21,57 +23,8 @@ const InviteButton = ({ telegramUser }) => {
     return `https://t.me/${botName}?start=invite_${inviteCode}`;
   };
 
-  // 텔레그램 웹앱 API를 통한 친구 초대 함수
+  // 텔레그램 웹앱 API를 통한 친구 초대 함수 (링크 복사)
   const handleInviteFriend = () => {
-    try {
-      // 초대 링크 생성
-      const inviteLink = generateInviteLink();
-      const inviteText = `해당 링크를 통해 앱에 참여하고 보상을 받으세요! ${inviteLink}`;
-      
-      // 텔레그램 WebApp API가 존재하는지 확인
-      if (window.Telegram && window.Telegram.WebApp) {
-        // 방법 1: 인라인 모드로 공유
-        if (window.Telegram.WebApp.switchInlineQuery) {
-          window.Telegram.WebApp.switchInlineQuery(inviteText);
-          return;
-        }
-        
-        // 방법 2: 외부 링크 열기
-        if (window.Telegram.WebApp.openLink) {
-          window.Telegram.WebApp.openLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent('친구 초대 링크입니다!')}`);
-          return;
-        }
-        
-        // 방법 3: 클립보드에 복사
-        navigator.clipboard.writeText(inviteLink)
-          .then(() => {
-            alert('초대 링크가 클립보드에 복사되었습니다! 친구에게 공유해주세요.');
-            // 텔레그램 앱 닫기
-            window.Telegram.WebApp.close();
-          })
-          .catch(err => {
-            console.error('링크 복사 실패: ', err);
-            alert('링크 복사에 실패했습니다. 복사 버튼을 사용해주세요.');
-          });
-      } else {
-        // 텔레그램 앱 외부에서 접근한 경우
-        navigator.clipboard.writeText(inviteLink)
-          .then(() => {
-            alert('초대 링크가 클립보드에 복사되었습니다! 친구에게 공유해주세요.');
-          })
-          .catch(err => {
-            console.error('링크 복사 실패: ', err);
-            alert('링크 복사에 실패했습니다.');
-          });
-      }
-    } catch (error) {
-      console.error('초대 링크 공유 오류:', error);
-      alert('초대 기능에 문제가 발생했습니다. 복사 버튼을 사용해주세요.');
-    }
-  };
-
-  // 초대 링크 복사 함수
-  const handleCopyLink = () => {
     try {
       // 초대 링크 생성
       const inviteLink = generateInviteLink();
@@ -79,11 +32,17 @@ const InviteButton = ({ telegramUser }) => {
       // 클립보드에 복사
       navigator.clipboard.writeText(inviteLink)
         .then(() => {
+          setCopySuccess(true);
           alert('초대 링크가 클립보드에 복사되었습니다!');
+          
+          // 3초 후 성공 메시지 초기화
+          setTimeout(() => {
+            setCopySuccess(false);
+          }, 3000);
         })
         .catch(err => {
           console.error('링크 복사 실패: ', err);
-          alert('링크 복사에 실패했습니다.');
+          alert('링크 복사에 실패했습니다. 다시 시도해주세요.');
         });
     } catch (error) {
       console.error('초대 링크 생성 오류:', error);
@@ -92,17 +51,13 @@ const InviteButton = ({ telegramUser }) => {
   };
 
   return (
-    <>
-      <button className="invite-button" onClick={handleInviteFriend}>
-        <span>친구 초대하기</span>
-        <span style={{ marginLeft: '8px' }}>👤</span>
-      </button>
-      <button className="copy-link-button" onClick={handleCopyLink}>
-        <svg className="copy-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M8 5H6C4.89543 5 4 5.89543 4 7V19C4 20.1046 4.89543 21 6 21H16C17.1046 21 18 20.1046 18 19V18M8 5C8 6.10457 8.89543 7 10 7H12C13.1046 7 14 6.10457 14 5M8 5C8 3.89543 8.89543 3 10 3H12C13.1046 3 14 3.89543 14 5M14 5H16C17.1046 5 18 5.89543 18 7V10M20 14H10M10 14L13 11M10 14L13 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </button>
-    </>
+    <button 
+      className={`invite-button ${copySuccess ? 'success' : ''}`} 
+      onClick={handleInviteFriend}
+    >
+      <span>{copySuccess ? '복사 완료!' : '친구 초대하기'}</span>
+      <span style={{ marginLeft: '8px' }}>{copySuccess ? '✓' : '👤'}</span>
+    </button>
   );
 };
 
