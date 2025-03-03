@@ -1,0 +1,217 @@
+.friends-container {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  color: #ffffff;
+  background-color: #1c2333;
+  min-height: 100vh;
+  padding-bottom: 80px; /* 하단 네비게이션 바를 위한 여백 */
+}
+
+.friends-title {
+  font-size: 32px;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 20px;
+  margin-bottom: 0;
+  letter-spacing: 1px;
+  color: #ffffff;
+}
+
+.friends-subtitle {
+  font-size: 16px;
+  text-align: center;
+  margin-top: 8px;
+  margin-bottom: 24px;
+  color: #a0a0a0;
+}
+
+.friends-image-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.friends-image {
+  width: 180px;
+  height: auto;
+}
+
+.invitation-bonus-container {
+  background-color: #232d42;
+  border: 1px solid #393f4a;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.invitation-bonus-title {
+  font-size: 18px;
+  margin-bottom: 8px;
+  color: #ffffff;
+}
+
+.invitation-bonus-value {
+  font-size: 24px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+}
+
+.invitation-bonus-coin {
+  font-size: 20px;
+  margin-right: 8px;
+}
+
+.rewards-container {
+  background-color: #232d42;
+  border: 1px solid #393f4a;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.reward-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.reward-item:last-child {
+  margin-bottom: 0;
+}
+
+.reward-icon {
+  font-size: 24px;
+  margin-right: 12px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reward-text {
+  flex: 1;
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.info-icon {
+  font-size: 20px;
+  color: #a0a0a0;
+  margin-left: 8px;
+}
+
+.friend-list-container {
+  margin-bottom: 24px;
+}
+
+.friend-list-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.friend-list-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-right: 8px;
+  color: #ffffff;
+}
+
+.friend-list-count {
+  font-size: 18px;
+  color: #a0a0a0;
+}
+
+.friend-empty-message {
+  text-align: center;
+  color: #a0a0a0;
+  margin: 40px 0;
+  font-size: 16px;
+  background-color: #232d42;
+  border: 1px solid #393f4a;
+  border-radius: 16px;
+  padding: 32px 16px;
+}
+
+.friend-list {
+  background-color: #232d42;
+  border: 1px solid #393f4a;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.friend-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid #393f4a;
+}
+
+.friend-item:last-child {
+  border-bottom: none;
+}
+
+.friend-name {
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.friend-status {
+  color: #a0a0a0;
+  font-size: 14px;
+}
+
+.invite-actions {
+  display: flex;
+  margin-top: auto;
+}
+
+.invite-button {
+  flex: 1;
+  background-color: #58a6ff;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  transition: background-color 0.2s;
+}
+
+.invite-button:hover {
+  background-color: #3c93ff;
+}
+
+.copy-link-button {
+  width: 48px;
+  height: 48px;
+  background-color: #232d42;
+  border: 1px solid #393f4a;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.copy-link-button:hover {
+  background-color: #2a3550;
+}
+
+.copy-icon {
+  width: 24px;
+  height: 24px;
+  color: #ffffff;
+}
