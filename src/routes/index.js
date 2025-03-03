@@ -1,21 +1,42 @@
+// routes/index.js - Router 중첩 문제 해결
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import NavigationBar from '../components/layout/NavigationBar';
+
+// 래플 관련 페이지
 import EventList from '../features/raffle/pages/EventList';
 import EventDetail from '../features/raffle/pages/EventDetail';
 import CreateEvent from '../features/raffle/pages/CreateEvent';
 
-const AppRoutes = ({ telegramUser, isAdmin }) => {
+// 태스크 관련 페이지
+import TaskList from '../features/task/pages/TaskList';
+import CreateTask from '../features/task/pages/CreateTask';
+import TaskDetail from '../features/task/pages/TaskDetail';
+
+// BrowserRouter 제거 - 상위 컴포넌트에서 사용
+const AppRoutes = () => {
   return (
-    <Routes>
-      <Route path="/" element={<EventList telegramUser={telegramUser} isAdmin={isAdmin} />} />
-      <Route path="/event/:id" element={<EventDetail telegramUser={telegramUser} isAdmin={isAdmin} />} />
-      <Route path="/create" element={<CreateEvent telegramUser={telegramUser} isAdmin={isAdmin} />} />
-      {/* 미래에 추가될 라우트 */}
-      <Route path="/tasks" element={<div>Tasks Page (벤)</div>} />
-      <Route path="/earn" element={<div>Earn Page (타)</div>} />
-      <Route path="/friends" element={<div>Friends Page (코)</div>} />
-      <Route path="/wallet" element={<div>Wallet Page (똥)</div>} />
-    </Routes>
+    <div className="app-container">
+      <div className="content-container pb-16"> {/* 네비게이션 바 공간 확보 */}
+        <Routes>
+          {/* Raffle 라우트 */}
+          <Route path="/" element={<EventList />} />
+          <Route path="/event/:id" element={<EventDetail />} />
+          <Route path="/create" element={<CreateEvent />} />
+          
+          {/* Task 라우트 */}
+          <Route path="/task" element={<TaskList />} />
+          <Route path="/task/create" element={<CreateTask />} />
+          <Route path="/task/:id" element={<TaskDetail />} />
+          
+          {/* 기타 라우트는 미구현 상태 */}
+          <Route path="/earn" element={<div className="p-4 text-white">Earn 기능 - 준비 중</div>} />
+          <Route path="/friends" element={<div className="p-4 text-white">Friends 기능 - 준비 중</div>} />
+          <Route path="/wallet" element={<div className="p-4 text-white">Wallet 기능 - 준비 중</div>} />
+        </Routes>
+      </div>
+      <NavigationBar />
+    </div>
   );
 };
 

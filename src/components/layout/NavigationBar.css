@@ -6,11 +6,11 @@
   width: 100%;
   display: flex;
   justify-content: space-around;
-  background-color: var(--dark-card-bg);
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+  background-color: #1c2333; /* 다크 테마 배경색 */
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
   padding: 10px 0;
   z-index: 1000;
-  border-top: 1px solid var(--dark-border-color);
+  border-top: 1px solid #393f4a; /* 다크 테마 테두리색 */
 }
 
 .nav-item {
@@ -18,9 +18,10 @@
   flex-direction: column;
   align-items: center;
   text-decoration: none;
-  color: var(--tg-theme-hint-color);
+  color: #a0a0a0; /* 비활성화 색상 */
   font-size: 0.7rem;
   transition: color 0.2s;
+  cursor: pointer;
 }
 
 .nav-icon {
@@ -29,7 +30,7 @@
 }
 
 .nav-item.active {
-  color: var(--primary-color);
+  color: #f9ca24; /* 활성화 색상 - 노란색 */
 }
 
 .nav-text {

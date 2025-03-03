@@ -95,13 +95,13 @@ function App() {
   };
 
   if (loading) {
-    return <div className="loading">로딩 중...</div>;
+    return <div className="loading text-white text-center p-4 bg-[#1c2333] min-h-screen flex justify-center items-center">로딩 중...</div>;
   }
 
   return (
     <Router>
-      <div className="app">
-        <div className="content-wrapper">
+      <div className="app bg-[#1c2333] min-h-screen text-white">
+        <div className="content-wrapper pb-16"> {/* 네비게이션 바 공간 확보 */}
           {/* AppRoutes 컴포넌트로 라우트 관리 */}
           <AppRoutes telegramUser={telegramUser} isAdmin={isAdmin} />
         </div>
