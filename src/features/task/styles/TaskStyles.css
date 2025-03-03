@@ -118,6 +118,7 @@
 
 .join-button.completed {
   background-color: #16a34a;
+  color: white; /* 완료 버튼 텍스트 색상을 흰색으로 설정 */
   cursor: not-allowed;
 }
 
