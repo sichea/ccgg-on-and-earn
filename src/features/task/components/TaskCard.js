@@ -50,7 +50,7 @@ const TaskCard = ({ task, telegramUser, isAdmin, onClick }) => {
         });
       }
       
-      alert(`태스크 참여 완료! ${task.reward} GOLD 획득!`);
+      alert(`태스크 참여 완료! ${task.reward} MOPI 획득!`);
       window.location.reload(); // UI 갱신을 위한 새로고침
     } catch (error) {
       console.error('태스크 참여 오류:', error);
