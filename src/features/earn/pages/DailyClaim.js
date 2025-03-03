@@ -4,7 +4,7 @@ import { db } from '../../../services/firebase';
 import ClaimTimer from '../components/ClaimTimer';
 import { getUserDocument, updateUserDocument } from '../../../utils/userUtils';
 import '../styles/EarnStyles.css';
-import ccggLogo from "../../assets/images/ccgg-logo.png";
+import ccggLogo from "../../../assets/images/ccgg-logo.png";
 
 const DailyClaim = ({ telegramUser, isAdmin }) => {
   const [userPoints, setUserPoints] = useState(0);
