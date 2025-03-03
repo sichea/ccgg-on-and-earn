@@ -1,39 +1,73 @@
 import React from 'react';
 
-const InviteButton = () => {
+const InviteButton = ({ telegramUser }) => {
+  // 초대 코드 생성 함수
+  const generateInviteCode = (userId) => {
+    // 사용자 ID와 타임스탬프를 조합하여 코드 생성
+    const timestamp = Date.now().toString(36);
+    const randomStr = Math.random().toString(36).substring(2, 8);
+    return `${userId.substring(0, 6)}_${timestamp}_${randomStr}`;
+  };
+
+  // 초대 링크 생성 함수
+  const generateInviteLink = () => {
+    if (!telegramUser?.id) return "";
+    
+    const userId = telegramUser.id.toString();
+    const inviteCode = generateInviteCode(userId);
+    
+    // 실제 봇 이름으로 변경해야 합니다 (예: 'your_money_toon_bot')
+    const botName = process.env.REACT_APP_TELEGRAM_BOT_NAME || 'your_bot_name';
+    return `https://t.me/${botName}?start=invite_${inviteCode}`;
+  };
+
   // 텔레그램 웹앱 API를 통한 친구 초대 함수
   const handleInviteFriend = () => {
-    // 텔레그램 WebApp API가 존재하는지 확인
-    if (window.Telegram && window.Telegram.WebApp) {
-      // 텔레그램의 사용자 선택기를 띄움
-      window.Telegram.WebApp.openScanQrPopup({
-        text: 'Scan this QR code to join our app!'
-      });
-    } else {
-      alert('Telegram WebApp is not available');
+    try {
+      // 초대 링크 생성
+      const inviteLink = generateInviteLink();
+      
+      // 텔레그램 WebApp API가 존재하는지 확인
+      if (window.Telegram && window.Telegram.WebApp) {
+        // 공유 팝업 열기
+        window.Telegram.WebApp.switchInlineQuery(
+          `친구 초대 링크: ${inviteLink}`,
+          ['users', 'groups', 'channels']
+        );
+      } else {
+        alert('텔레그램 앱에서만 초대 기능을 사용할 수 있습니다.');
+      }
+    } catch (error) {
+      console.error('초대 링크 공유 오류:', error);
+      alert('초대 링크 공유 중 오류가 발생했습니다.');
     }
   };
 
   // 초대 링크 복사 함수
   const handleCopyLink = () => {
-    // 사용자의 고유 초대 링크 생성 (실제로는 백엔드에서 생성해야 함)
-    const inviteLink = `https://t.me/your_bot_name?start=invite_${Date.now()}`;
-    
-    // 클립보드에 복사
-    navigator.clipboard.writeText(inviteLink)
-      .then(() => {
-        alert('Invitation link copied to clipboard!');
-      })
-      .catch(err => {
-        console.error('Failed to copy link: ', err);
-        alert('Failed to copy link.');
-      });
+    try {
+      // 초대 링크 생성
+      const inviteLink = generateInviteLink();
+      
+      // 클립보드에 복사
+      navigator.clipboard.writeText(inviteLink)
+        .then(() => {
+          alert('초대 링크가 클립보드에 복사되었습니다!');
+        })
+        .catch(err => {
+          console.error('링크 복사 실패: ', err);
+          alert('링크 복사에 실패했습니다.');
+        });
+    } catch (error) {
+      console.error('초대 링크 생성 오류:', error);
+      alert('초대 링크 생성 중 오류가 발생했습니다.');
+    }
   };
 
   return (
     <>
       <button className="invite-button" onClick={handleInviteFriend}>
-        <span>Invite a friend</span>
+        <span>친구 초대하기</span>
         <span style={{ marginLeft: '8px' }}>👤</span>
       </button>
       <button className="copy-link-button" onClick={handleCopyLink}>

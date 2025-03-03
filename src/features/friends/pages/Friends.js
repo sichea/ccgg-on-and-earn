@@ -55,7 +55,7 @@ const Friends = ({ telegramUser }) => {
       <FriendList friends={userData?.friends || []} />
       
       <div className="invite-actions">
-        <InviteButton />
+        <InviteButton telegramUser={telegramUser} />
       </div>
     </div>
   );
