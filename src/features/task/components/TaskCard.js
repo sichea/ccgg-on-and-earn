@@ -4,7 +4,7 @@ import { doc, updateDoc, arrayUnion, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../../services/firebase';
 import '../styles/TaskStyles.css';
 
-const TaskCard = ({ task, telegramUser, onClick }) => {
+const TaskCard = ({ task, telegramUser, isAdmin, onClick }) => {
   const [joining, setJoining] = useState(false);
   
   // 사용자 정보
@@ -50,7 +50,7 @@ const TaskCard = ({ task, telegramUser, onClick }) => {
         });
       }
       
-      alert(`태스크 참여 완료! ${task.reward} MOPI 획득!`);
+      alert(`태스크 참여 완료! ${task.reward} GOLD 획득!`);
       window.location.reload(); // UI 갱신을 위한 새로고침
     } catch (error) {
       console.error('태스크 참여 오류:', error);
@@ -64,11 +64,13 @@ const TaskCard = ({ task, telegramUser, onClick }) => {
   const renderPlatformIcon = () => {
     switch (task.platform) {
       case 'Twitter':
-        return <span>𝕏</span>;
+        return <span style={{ fontSize: '1rem', marginRight: '6px' }}>𝕏</span>;
       case 'Telegram':
-        return <span>✈️</span>;
+        return <span style={{ fontSize: '1rem', marginRight: '6px' }}>✈️</span>;
       case 'Discord':
-        return <span>👾</span>;
+        return <span style={{ fontSize: '1rem', marginRight: '6px' }}>👾</span>;
+      case 'Wallet':
+        return <span style={{ fontSize: '1rem', marginRight: '6px' }}>💼</span>;
       default:
         return null;
     }

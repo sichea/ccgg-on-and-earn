@@ -443,9 +443,9 @@ const EventDetail = ({ telegramUser, isAdmin }) => {
               <p className={`event-status ${event.isActive ? 'active' : 'ended'}`}>
                 상태: {event.isActive ? '진행중' : '종료됨'}
               </p>
-              <p>마감일: {new Date(event.endDate.toDate()).toLocaleDateString()} {new Date(event.endDate.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+              <p>마감일: <br/> {new Date(event.endDate.toDate()).toLocaleDateString()} {new Date(event.endDate.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
               {event.drawDate && (
-                <p>추첨일: {new Date(event.drawDate.toDate()).toLocaleDateString()} {new Date(event.drawDate.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                <p>추첨일: <br/> {new Date(event.drawDate.toDate()).toLocaleDateString()} {new Date(event.drawDate.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
               )}
             </div>
             
