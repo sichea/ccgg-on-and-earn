@@ -4,7 +4,6 @@ import { db } from '../../../services/firebase';
 import ClaimTimer from '../components/ClaimTimer';
 import { getUserDocument, updateUserDocument } from '../../../utils/userUtils';
 import '../styles/EarnStyles.css';
-import ccggLogo from '../public/images/ccgg-logo.png'
 
 const DailyClaim = ({ telegramUser, isAdmin }) => {
   const [userPoints, setUserPoints] = useState(0);
@@ -145,9 +144,8 @@ const DailyClaim = ({ telegramUser, isAdmin }) => {
             <h2 className="claim-title">DAILY CLAIM:</h2>
             <p className="claim-amount">{dailyAmount}</p>
             <div className="logo-container">
-              <img 
-                src={ccggLogo} 
-                alt="CCGG" 
+              <img src={`${process.env.PUBLIC_URL}/images/ccgg-logo.png`}
+                alt="CCGG Logo"
                 className="claim-logo" 
               />
             </div>
@@ -158,12 +156,11 @@ const DailyClaim = ({ telegramUser, isAdmin }) => {
             <h2 className="claim-title">NEXT CLAIM:</h2>
             <ClaimTimer timeRemaining={timeRemaining} />
             <div className="logo-container">
-              <img 
-                  src={ccggLogo} 
-                  alt="CCGG" 
-                  className="claim-logo" 
-                />
-              </div>
+              <img src={`${process.env.PUBLIC_URL}/images/ccgg-logo.png`}
+                alt="CCGG Logo"
+                className="claim-logo" 
+              />
+            </div>
             <button className="claimed-button" disabled>CLAIMED</button>
           </>
         )}
