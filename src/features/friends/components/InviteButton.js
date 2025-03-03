@@ -29,17 +29,49 @@ const InviteButton = ({ telegramUser }) => {
       
       // 텔레그램 WebApp API가 존재하는지 확인
       if (window.Telegram && window.Telegram.WebApp) {
-        // 공유 팝업 열기
-        window.Telegram.WebApp.switchInlineQuery(
-          `친구 초대 링크: ${inviteLink}`,
-          ['users', 'groups', 'channels']
-        );
+        // 공유 방법 1: 플랫폼에 따라 다른 메서드 사용
+        if (window.Telegram.WebApp.showScanQrPopup) {
+          // QR 코드 스캔 팝업 표시 (지원되는 플랫폼에서)
+          window.Telegram.WebApp.showScanQrPopup({
+            text: '이 QR 코드를 스캔하여 앱에 참여하세요!',
+            callback: (text) => {
+              console.log('QR 스캔 결과:', text);
+            }
+          });
+        } else if (window.Telegram.WebApp.openTelegramLink) {
+          // 텔레그램 링크 열기
+          window.Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink)}`);
+        } else {
+          // 공유 방법 2: 클립보드에 복사하고 안내 메시지 표시
+          navigator.clipboard.writeText(inviteLink)
+            .then(() => {
+              alert('초대 링크가 클립보드에 복사되었습니다! 친구에게 공유해주세요.');
+            })
+            .catch(err => {
+              console.error('링크 복사 실패: ', err);
+              alert('링크 복사에 실패했습니다.');
+            });
+        }
       } else {
         alert('텔레그램 앱에서만 초대 기능을 사용할 수 있습니다.');
       }
     } catch (error) {
       console.error('초대 링크 공유 오류:', error);
-      alert('초대 링크 공유 중 오류가 발생했습니다.');
+      
+      // 문제 발생 시 대체 방법: 클립보드에 복사
+      try {
+        const inviteLink = generateInviteLink();
+        navigator.clipboard.writeText(inviteLink)
+          .then(() => {
+            alert('초대 링크가 클립보드에 복사되었습니다! 친구에게 공유해주세요.');
+          })
+          .catch(err => {
+            console.error('링크 복사 실패: ', err);
+            alert('초대 기능에 문제가 발생했습니다. 복사 버튼을 사용해주세요.');
+          });
+      } catch (clipboardError) {
+        alert('초대 기능에 문제가 발생했습니다. 복사 버튼을 사용해주세요.');
+      }
     }
   };
 
