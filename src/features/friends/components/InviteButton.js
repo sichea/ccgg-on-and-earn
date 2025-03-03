@@ -99,7 +99,7 @@ const InviteButton = ({ telegramUser }) => {
   return (
     <>
       <button className="invite-button" onClick={handleInviteFriend}>
-        <span>친구 초대하기</span>
+        <span>나의 친구 초대하기</span>
         <span style={{ marginLeft: '8px' }}>👤</span>
       </button>
       <button className="copy-link-button" onClick={handleCopyLink}>
