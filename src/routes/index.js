@@ -12,6 +12,9 @@ import TaskList from '../features/task/pages/TaskList';
 import CreateTask from '../features/task/pages/CreateTask';
 import TaskDetail from '../features/task/pages/TaskDetail';
 
+// Earn 관련 페이지
+import DailyClaim from '../features/earn/pages/DailyClaim';
+
 const AppRoutes = ({ telegramUser, isAdmin }) => {
   return (
     <div className="content-container pb-16"> {/* 네비게이션 바 공간 확보 */}
@@ -26,8 +29,10 @@ const AppRoutes = ({ telegramUser, isAdmin }) => {
         <Route path="/task/create" element={<CreateTask telegramUser={telegramUser} isAdmin={isAdmin} />} />
         <Route path="/task/:id" element={<TaskDetail telegramUser={telegramUser} isAdmin={isAdmin} />} />
         
+        {/* Earn 라우트 */}
+        <Route path="/earn" element={<DailyClaim telegramUser={telegramUser} isAdmin={isAdmin} />} />
+        
         {/* 기타 라우트는 미구현 상태 */}
-        <Route path="/earn" element={<div className="p-4 text-white">Earn 기능 - 준비 중</div>} />
         <Route path="/friends" element={<div className="p-4 text-white">Friends 기능 - 준비 중</div>} />
         <Route path="/wallet" element={<div className="p-4 text-white">Wallet 기능 - 준비 중</div>} />
       </Routes>

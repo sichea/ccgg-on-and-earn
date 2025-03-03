@@ -1,0 +1,117 @@
+/* 메인 컨테이너 스타일 */
+.daily-claim-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #1c2333;
+  color: white;
+  padding: 20px;
+}
+
+/* 포인트 표시 영역 */
+.points-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.points-label {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.points-value {
+  padding: 8px 16px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  font-size: 18px;
+}
+
+.mopi-icon {
+  color: #58a6ff;
+}
+
+/* 클레임 섹션 */
+.claim-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex-grow: 1;
+  justify-content: center;
+}
+
+.claim-title {
+  font-size: 22px;
+  font-weight: normal;
+  margin-bottom: 20px;
+}
+
+.claim-amount {
+  font-size: 48px;
+  font-weight: bold;
+  color: #ffc107;
+  margin-bottom: 30px;
+}
+
+/* 로고 컨테이너 */
+.logo-container {
+  width: 150px;
+  height: 150px;
+  margin: 20px 0 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+}
+
+.claim-logo {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+}
+
+/* 클레임 버튼 */
+.claim-button {
+  background-color: #ffc107;
+  color: black;
+  border: none;
+  width: 200px;
+  height: 50px;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.claim-button:hover {
+  background-color: #ffca28;
+}
+
+.claim-button:active {
+  background-color: #ffa000;
+  transform: scale(0.98);
+}
+
+/* 이미 클레임한 상태의 버튼 */
+.claimed-button {
+  background-color: #4a525e;
+  color: #8a9099;
+  border: none;
+  width: 200px;
+  height: 50px;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: not-allowed;
+}
+
+/* 타이머 스타일 */
+.claim-timer {
+  font-size: 48px;
+  font-weight: bold;
+  color: #ffc107;
+  margin-bottom: 30px;
+}

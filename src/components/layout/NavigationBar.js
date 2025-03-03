@@ -42,7 +42,7 @@ const NavigationBar = () => {
         className={`nav-item ${activeTab === 'earn' ? 'active' : ''}`}
         onClick={() => navigate('/earn')}
       >
-        <div className="nav-icon">⭕</div>
+        <div className="nav-icon">🪙</div>
         <div className="nav-text">Earn</div>
       </div>
       
