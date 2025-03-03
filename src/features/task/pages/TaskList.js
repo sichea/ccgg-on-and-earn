@@ -1,8 +1,9 @@
-// features/task/pages/TaskList.js - 배열 관련 오류 수정
+// features/task/pages/TaskList.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, getDocs, query, where, doc, deleteDoc, updateDoc, arrayUnion, getDoc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, deleteDoc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
 import { db } from '../../../services/firebase';
+import { getUserDocument, updateUserDocument } from '../../../utils/userUtils';
 import '../styles/TaskStyles.css';
 
 const TaskList = ({ isAdmin, telegramUser }) => {
@@ -12,8 +13,8 @@ const TaskList = ({ isAdmin, telegramUser }) => {
   const [joiningTaskId, setJoiningTaskId] = useState(null); // 참여 중인 태스크 ID 추적
   const navigate = useNavigate();
   
-  // 사용자 ID (실제 환경에서는 telegramUser.id 사용)
-  const userId = telegramUser?.id || 'test-user-id';
+  // 사용자 ID
+  const userId = telegramUser?.id?.toString() || 'test-user-id';
   
   // 태스크 데이터 가져오기 함수
   const fetchTasks = async () => {
@@ -94,82 +95,91 @@ const TaskList = ({ isAdmin, telegramUser }) => {
     return participants.includes(userId);
   };
 
-// 태스크 참여 로직 간소화
-const handleJoinTask = async (taskId) => {
-  // 이미 처리 중이면 중단
-  if (joiningTaskId) return;
-  setJoiningTaskId(taskId);
-  
-  try {
-    // 태스크 찾기
-    const task = [...ccggTasks, ...partnersTasks].find(t => t.id === taskId);
+  // 태스크 참여 로직 - 유틸리티 함수 사용
+  const handleJoinTask = async (taskId) => {
+    // 이미 처리 중이면 중단
+    if (joiningTaskId) return;
+    setJoiningTaskId(taskId);
     
-    if (!task) {
-      alert('존재하지 않는 태스크입니다.');
-      return;
-    }
-    
-    // 링크 미리 저장
-    const taskLink = task.link;
-    
-    // 이미 참여했는지 확인
-    const participants = Array.isArray(task.participants) ? task.participants : [];
-    if (participants.includes(userId)) {
-      alert('이미 참여한 태스크입니다.');
+    try {
+      // 태스크 찾기
+      const task = [...ccggTasks, ...partnersTasks].find(t => t.id === taskId);
+      
+      if (!task) {
+        alert('존재하지 않는 태스크입니다.');
+        return;
+      }
+      
+      // 링크 미리 저장
+      const taskLink = task.link;
+      
+      // 이미 참여했는지 확인
+      const participants = Array.isArray(task.participants) ? task.participants : [];
+      if (participants.includes(userId)) {
+        alert('이미 참여한 태스크입니다.');
+        // 링크가 있으면 열기
+        if (taskLink) {
+          window.open(taskLink, '_blank');
+        }
+        return;
+      }
+      
+      // Firestore 업데이트
+      try {
+        const taskRef = doc(db, 'tasks', taskId);
+        await updateDoc(taskRef, {
+          participants: arrayUnion(userId)
+        });
+      } catch (updateError) {
+        console.error('Firestore 업데이트 오류:', updateError);
+      }
+      
+      // 사용자 정보 가져오기 및 업데이트
+      const userData = await getUserDocument(telegramUser);
+      
+      if (userData) {
+        // 포인트 업데이트
+        await updateUserDocument(userId, {
+          points: (userData.points || 0) + (task.reward || 0),
+          updatedAt: new Date()
+        });
+      }
+      
+      // 로컬 UI 업데이트
+      if (task.category === 'CCGG') {
+        setCcggTasks(prev => 
+          prev.map(t => 
+            t.id === taskId 
+              ? {...t, participants: [...participants, userId]} 
+              : t
+          )
+        );
+      } else {
+        setPartnersTasks(prev => 
+          prev.map(t => 
+            t.id === taskId 
+              ? {...t, participants: [...participants, userId]} 
+              : t
+          )
+        );
+      }
+      
       // 링크가 있으면 열기
       if (taskLink) {
         window.open(taskLink, '_blank');
       }
-      return;
-    }
-    
-    // Firestore 업데이트 - 이 부분이 문제라면 생략 가능
-    try {
-      // Firestore 업데이트 로직
-      const taskRef = doc(db, 'tasks', taskId);
-      await updateDoc(taskRef, {
-        participants: arrayUnion(userId)
-      });
-    } catch (updateError) {
-      console.error('Firestore 업데이트 오류:', updateError);
-      // Firestore 업데이트 실패해도 계속 진행
-    }
-    
-    // 로컬 UI 업데이트
-    if (task.category === 'CCGG') {
-      setCcggTasks(prev => 
-        prev.map(t => 
-          t.id === taskId 
-            ? {...t, participants: [...participants, userId]} 
-            : t
-        )
-      );
-    } else {
-      setPartnersTasks(prev => 
-        prev.map(t => 
-          t.id === taskId 
-            ? {...t, participants: [...participants, userId]} 
-            : t
-        )
-      );
-    }
-    
-    // 링크가 있으면 열기
-    if (taskLink) {
-      window.open(taskLink, '_blank');
-    }
-    
-    // 약간의 지연 후 참여 처리 및 알림
-    setTimeout(() => {
-      alert(`태스크 참여 완료! ${task.reward} MOPI 획득!`);
-    }, 500);
+      
+      // 약간의 지연 후 참여 처리 및 알림
+      setTimeout(() => {
+        alert(`태스크 참여 완료! ${task.reward} MOPI 획득!`);
+      }, 500);
 
-  } catch (error) {
-    console.error('태스크 참여 오류:', error);
-  } finally {
-    setJoiningTaskId(null);
-  }
-};
+    } catch (error) {
+      console.error('태스크 참여 오류:', error);
+    } finally {
+      setJoiningTaskId(null);
+    }
+  };
 
   return (
     <div className="task-container">

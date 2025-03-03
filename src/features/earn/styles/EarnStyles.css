@@ -63,13 +63,14 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  border-radius: 50%;
+  border-radius: 50%; /* 이 부분이 컨테이너를 동그랗게 만듭니다 */
+  overflow: hidden; /* 이미지가 컨테이너를 벗어나지 않도록 합니다 */
 }
 
 .claim-logo {
-  width: 80%;
-  height: 80%;
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* 이미지 비율 유지 */
 }
 
 /* 클레임 버튼 */

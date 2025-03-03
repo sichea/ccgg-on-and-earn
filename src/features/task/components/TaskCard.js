@@ -1,14 +1,15 @@
 // features/task/components/TaskCard.js
 import React, { useState } from 'react';
-import { doc, updateDoc, arrayUnion, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../services/firebase';
+import { getUserDocument, updateUserDocument } from '../../../utils/userUtils';
 import '../styles/TaskStyles.css';
 
 const TaskCard = ({ task, telegramUser, isAdmin, onClick }) => {
   const [joining, setJoining] = useState(false);
   
   // 사용자 정보
-  const userId = telegramUser?.id || 'test-user-id';
+  const userId = telegramUser?.id?.toString() || 'test-user-id';
   
   // 사용자가 이미 참여했는지 확인
   const hasJoined = task.participants?.includes(userId);
@@ -20,34 +21,22 @@ const TaskCard = ({ task, telegramUser, isAdmin, onClick }) => {
     
     setJoining(true);
     try {
+      // 태스크 문서 업데이트 - 참여자 추가
       const taskRef = doc(db, 'tasks', task.id);
       
-      // 참여자 추가
-      await updateDoc(taskRef, {
-        participants: arrayUnion(userId)
-      });
+      // 사용자 정보 가져오기
+      const userData = await getUserDocument(telegramUser);
       
-      // 사용자에게 보상 지급 로직 구현
-      // 사용자의 포인트 정보를 가져옴
-      const userRef = doc(db, 'users', userId);
-      const userSnap = await getDoc(userRef);
-      
-      if (userSnap.exists()) {
+      if (userData) {
         // 현재 포인트에 태스크 보상 추가
-        const currentPoints = userSnap.data().points || 0;
-        await updateDoc(userRef, {
-          points: currentPoints + (task.reward || 0),
+        const updatedUser = await updateUserDocument(userId, {
+          points: (userData.points || 0) + (task.reward || 0),
           updatedAt: new Date()
         });
-      } else {
-        // 사용자 문서가 없으면 새로 생성
-        await setDoc(userRef, {
-          userId: userId,
-          username: telegramUser?.username || '',
-          points: task.reward || 0,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
+        
+        if (updatedUser) {
+          console.log("포인트 업데이트 성공:", updatedUser.points);
+        }
       }
       
       alert(`태스크 참여 완료! ${task.reward} MOPI 획득!`);

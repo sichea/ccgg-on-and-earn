@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../services/firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import DailyClaimButton from '../components/DailyClaimButton';
 import ClaimTimer from '../components/ClaimTimer';
+import { getUserDocument, updateUserDocument } from '../../../utils/userUtils';
 import '../styles/EarnStyles.css';
 
 const DailyClaim = ({ telegramUser, isAdmin }) => {
@@ -11,8 +11,8 @@ const DailyClaim = ({ telegramUser, isAdmin }) => {
   const [lastClaimTime, setLastClaimTime] = useState(null);
   const [canClaim, setCanClaim] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(null);
-  // userId를 텔레그램 사용자 ID로 설정
   const [userId, setUserId] = useState(telegramUser?.id?.toString() || null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // telegramUser가 변경될 때 userId 업데이트
@@ -23,44 +23,29 @@ const DailyClaim = ({ telegramUser, isAdmin }) => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!userId) return; // userId가 없으면 함수 종료
+      if (!userId || !telegramUser) return;
       
+      setIsLoading(true);
       try {
-        console.log("Fetching data for user:", userId);
-        const userRef = doc(db, 'users', userId);
-        const userDoc = await getDoc(userRef);
+        // 통합된 유틸리티 함수 사용
+        const userData = await getUserDocument(telegramUser);
         
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
+        if (userData) {
           setUserPoints(userData.points || 0);
           setLastClaimTime(userData.lastClaimTime?.toDate() || null);
-          
-          // 관리자 설정에서 일일 보상 금액 가져오기
-          const settingsRef = doc(db, 'settings', 'dailyRewards');
-          const settingsDoc = await getDoc(settingsRef);
-          
-          if (settingsDoc.exists()) {
-            setDailyAmount(settingsDoc.data().amount || 1000);
-          }
-        } else {
-          // 사용자 문서가 없으면 새로 만들기
-          console.log("User document doesn't exist, creating new one");
-          try {
-            await updateDoc(userRef, {
-              points: 0,
-              lastClaimTime: null,
-              createdAt: new Date(),
-              telegramId: telegramUser?.id?.toString(),
-              username: telegramUser?.username || null,
-              firstName: telegramUser?.first_name || null,
-              lastName: telegramUser?.last_name || null
-            });
-          } catch (error) {
-            console.error("Error creating user document:", error);
-          }
+        }
+        
+        // 관리자 설정에서 일일 보상 금액 가져오기
+        const settingsRef = doc(db, 'settings', 'dailyRewards');
+        const settingsDoc = await getDoc(settingsRef);
+        
+        if (settingsDoc.exists()) {
+          setDailyAmount(settingsDoc.data().amount || 1000);
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -104,17 +89,19 @@ const DailyClaim = ({ telegramUser, isAdmin }) => {
     try {
       console.log("Attempting to claim reward for user:", userId);
       const now = new Date();
-      const userRef = doc(db, 'users', userId);
       
-      await updateDoc(userRef, {
+      // 통합된 유틸리티 함수 사용
+      const updatedUser = await updateUserDocument(userId, {
         points: userPoints + dailyAmount,
         lastClaimTime: now
       });
       
-      console.log("Claim successful!");
-      setUserPoints(prev => prev + dailyAmount);
-      setLastClaimTime(now);
-      setCanClaim(false);
+      if (updatedUser) {
+        console.log("Claim successful!");
+        setUserPoints(updatedUser.points);
+        setLastClaimTime(updatedUser.lastClaimTime?.toDate() || now);
+        setCanClaim(false);
+      }
     } catch (error) {
       console.error('Error claiming reward:', error);
       alert(`클레임 처리 중 오류가 발생했습니다: ${error.message}`);
@@ -128,6 +115,17 @@ const DailyClaim = ({ telegramUser, isAdmin }) => {
         <div className="claim-section">
           <h2>텔레그램 로그인이 필요합니다</h2>
           <p>일일 보상을 받으려면 텔레그램으로 로그인해주세요.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 로딩 중 표시
+  if (isLoading) {
+    return (
+      <div className="daily-claim-container">
+        <div className="claim-section">
+          <h2>로딩 중...</h2>
         </div>
       </div>
     );
@@ -148,7 +146,7 @@ const DailyClaim = ({ telegramUser, isAdmin }) => {
             <div className="logo-container">
               <img 
                 src="/images/ccgg-logo.png" 
-                alt="MOPI" 
+                alt="CCGG" 
                 className="claim-logo" 
               />
             </div>
@@ -161,7 +159,7 @@ const DailyClaim = ({ telegramUser, isAdmin }) => {
             <div className="logo-container">
               <img 
                 src="/images/ccgg-logo.png" 
-                alt="MOPI" 
+                alt="CCGG" 
                 className="claim-logo" 
               />
             </div>

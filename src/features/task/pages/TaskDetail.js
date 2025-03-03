@@ -1,8 +1,9 @@
 // features/task/pages/TaskDetail.js
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc, deleteDoc, arrayUnion, setDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, deleteDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../../../services/firebase';
+import { getUserDocument, updateUserDocument } from '../../../utils/userUtils';
 import '../styles/TaskStyles.css';
 
 const TaskDetail = ({ isAdmin, telegramUser }) => {
@@ -14,12 +15,8 @@ const TaskDetail = ({ isAdmin, telegramUser }) => {
   const [editing, setEditing] = useState(false);
   const [editData, setEditData] = useState({});
   
-  // Telegram WebApp에서 사용자 정보 가져오기
-  const userId = telegramUser?.id || 'test-user-id';
-  
-  // 관리자 권한은 App.js에서 전달받은 isAdmin 사용
-  // const adminIds = ['5172197798', 'ADMIN_TELEGRAM_ID_2']; 
-  // const isAdmin = telegramUser ? adminIds.includes(String(telegramUser.id)) : false;
+  // 사용자 ID 추출
+  const userId = telegramUser?.id?.toString() || 'test-user-id';
   
   useEffect(() => {
     const fetchTask = async () => {
@@ -66,24 +63,13 @@ const TaskDetail = ({ isAdmin, telegramUser }) => {
         updatedAt: new Date()
       });
       
-      // 사용자에게 보상 지급 로직 구현
-      const userRef = doc(db, 'users', userId);
-      const userSnap = await getDoc(userRef);
+      // 사용자 정보 가져오기 및 업데이트
+      const userData = await getUserDocument(telegramUser);
       
-      if (userSnap.exists()) {
-        // 현재 포인트에 태스크 보상 추가
-        const currentPoints = userSnap.data().points || 0;
-        await updateDoc(userRef, {
-          points: currentPoints + (task.reward || 0),
-          updatedAt: new Date()
-        });
-      } else {
-        // 사용자 문서가 없으면 새로 생성
-        await setDoc(userRef, {
-          userId: userId,
-          username: telegramUser?.username || '',
-          points: task.reward || 0,
-          createdAt: new Date(),
+      if (userData) {
+        // 포인트 업데이트
+        await updateUserDocument(userId, {
+          points: (userData.points || 0) + (task.reward || 0),
           updatedAt: new Date()
         });
       }
@@ -176,6 +162,8 @@ const TaskDetail = ({ isAdmin, telegramUser }) => {
         </div>
         
         <form onSubmit={handleSubmitEdit} className="task-form">
+          {/* 폼 코드는 그대로 유지 */}
+          {/* ... */}
           <div className="form-group">
             <label className="form-label" style={{ display: 'block', color: '#a0a0a0', marginBottom: '4px' }}>카테고리</label>
             <select
@@ -296,6 +284,8 @@ const TaskDetail = ({ isAdmin, telegramUser }) => {
       </div>
       
       <div style={{ backgroundColor: '#232d42', borderRadius: '6px', padding: '16px', marginTop: '16px' }}>
+        {/* 상세 정보 코드는 그대로 유지 */}
+        {/* ... */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
           <div>
             <div style={{ color: 'white', fontWeight: '500', fontSize: '1.125rem' }}>{task.title}</div>
