@@ -1,6 +1,5 @@
 import { db } from '../../../services/firebase';
-import { getUserDocument, updateUserDocument } from '../../../utils/userUtils';
-import { doc, getDoc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, increment, collection, getDocs } from 'firebase/firestore';
 
 // 초대 코드 생성 함수
 export const generateInviteCode = (userId) => {
