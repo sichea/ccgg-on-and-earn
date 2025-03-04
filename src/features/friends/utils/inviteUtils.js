@@ -22,6 +22,10 @@ export const processInvitation = async (inviterUserId, inviteeUserId) => {
   try {
     console.log(`처리 중: 초대자 ${inviterUserId}, 초대된 사용자 ${inviteeUserId}`);
     
+    // 문자열로 변환하여 일관성 유지
+    inviterUserId = inviterUserId.toString();
+    inviteeUserId = inviteeUserId.toString();
+    
     // 이미 처리된 초대인지 확인
     const inviteeDocRef = doc(db, 'users', inviteeUserId);
     const inviteeDoc = await getDoc(inviteeDocRef);
@@ -42,7 +46,7 @@ export const processInvitation = async (inviterUserId, inviteeUserId) => {
     const inviterDocSnap = await getDoc(inviterDocRef);
     
     if (!inviterDocSnap.exists()) {
-      console.log('초대자를 찾을 수 없습니다.');
+      console.log('초대자를 찾을 수 없습니다:', inviterUserId);
       return false;
     }
     
@@ -52,10 +56,13 @@ export const processInvitation = async (inviterUserId, inviteeUserId) => {
       invitedAt: new Date()
     });
     
-    // 초대자 정보 업데이트
+    console.log('초대자 정보 업데이트 시도:', inviterUserId);
+    
+    // 초대자 정보 업데이트 - 보상 지급
     await updateDoc(inviterDocRef, {
       // 초대 보너스 증가
       invitationBonus: increment(1000), // 1000 MOPI 보상
+      points: increment(1000), // 포인트도 함께 증가
       
       // 초대된 친구 목록에 추가
       friends: arrayUnion({
@@ -68,10 +75,10 @@ export const processInvitation = async (inviterUserId, inviteeUserId) => {
       invitationCount: increment(1)
     });
     
-    console.log('초대 처리 완료!');
+    console.log('초대 처리 완료! 초대자:', inviterUserId, '보상 지급됨');
     return true;
   } catch (error) {
-    console.error('Error processing invitation:', error);
+    console.error('Error processing invitation:', error, '초대자:', inviterUserId, '초대받은 사용자:', inviteeUserId);
     return false;
   }
 };
@@ -80,6 +87,11 @@ export const processInvitation = async (inviterUserId, inviteeUserId) => {
 export const validateInviteCode = (inviteCode) => {
   try {
     console.log('검증 중인 초대 코드:', inviteCode);
+    
+    if (!inviteCode) {
+      console.log('초대 코드가 없습니다');
+      return null;
+    }
     
     // 코드 형식 검증 (userId_timestamp_randomStr)
     const parts = inviteCode.split('_');
@@ -91,6 +103,13 @@ export const validateInviteCode = (inviteCode) => {
     // 초대자 ID 추출 (첫 번째 부분이 ID)
     const inviterId = parts[0];
     console.log('추출된 초대자 ID:', inviterId);
+    
+    // 초대자 ID가 숫자인지 확인
+    if (!/^\d+$/.test(inviterId)) {
+      console.log('유효하지 않은 초대자 ID 형식:', inviterId);
+      return null;
+    }
+    
     return inviterId;
   } catch (error) {
     console.error('초대 코드 검증 오류:', error);

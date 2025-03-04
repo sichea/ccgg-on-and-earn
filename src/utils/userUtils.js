@@ -31,27 +31,23 @@ export const getUserDocument = async (telegramUser) => {
       const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
       console.log('초대 파라미터 확인:', startParam);
       
-      if (startParam) {
-        // 초대 코드 형식과 일치하는지 확인 (userId_timestamp_randomStr)
-        if (startParam.split('_').length === 3) {
-          // 초대 코드 처리는 사용자 생성 후 별도 함수에서 처리
-          userData.pendingInviteCode = startParam;
-          console.log('초대 코드 저장:', startParam);
-        }
-      }
-      
+      // 먼저 사용자 문서 생성
       await setDoc(userRef, userData);
       
-      // 초대 코드 처리 (있는 경우)
-      if (userData.pendingInviteCode) {
+      // 초대 코드가 있으면 처리
+      if (startParam && startParam.split('_').length === 3) {
         try {
-          console.log('초대 코드 처리 시작:', userData.pendingInviteCode);
-          // inviteUtils에서 처리 함수 import
+          console.log('초대 코드 처리 시작:', startParam);
+          // 직접 inviteUtils에서 함수 import하는 대신 경로 변경
           const { handleInviteParameter } = await import('../features/friends/utils/inviteUtils');
-          const result = await handleInviteParameter(userData.pendingInviteCode, userId);
+          
+          // 초대 코드 처리 전에 짧은 지연을 추가
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          const result = await handleInviteParameter(startParam, userId);
           console.log('초대 코드 처리 결과:', result);
           
-          // 처리 후 pendingInviteCode 필드 제거
+          // pendingInviteCode 필드 제거
           await updateDoc(userRef, {
             pendingInviteCode: null
           });
@@ -60,7 +56,8 @@ export const getUserDocument = async (telegramUser) => {
         }
       }
       
-      return { ...userData, id: userId };
+      const freshUserDoc = await getDoc(userRef);
+      return { ...freshUserDoc.data(), id: userId };
     }
     
     return { ...userDoc.data(), id: userId };
