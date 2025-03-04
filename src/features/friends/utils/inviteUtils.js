@@ -74,7 +74,7 @@ export const processInvitation = async (inviterUserId, inviteeUserId) => {
   try {
     console.log(`처리 중: 초대자 ${inviterUserId}, 초대된 사용자 ${inviteeUserId}`);
     
-    // 문자열로 변환
+    // 문자열로 확실히 변환
     inviterUserId = inviterUserId.toString();
     inviteeUserId = inviteeUserId.toString();
     
@@ -108,20 +108,43 @@ export const processInvitation = async (inviterUserId, inviteeUserId) => {
       invitedAt: new Date()
     });
     
-    // DailyClaim과 유사한 방식으로 초대자 업데이트
+    // 초대자에게 보상 지급
     const currentPoints = inviterDoc.data().points || 0;
+    const currentInvitationBonus = inviterDoc.data().invitationBonus || 0;
+    const currentInvitationCount = inviterDoc.data().invitationCount || 0;
     
-    // 초대자에게 보상 지급 (하나의 간단한 업데이트)
     await updateDoc(inviterDocRef, {
       points: currentPoints + 1000,
-      invitationBonus: (inviterDoc.data().invitationBonus || 0) + 1000,
-      invitationCount: (inviterDoc.data().invitationCount || 0) + 1
+      invitationBonus: currentInvitationBonus + 1000,
+      invitationCount: currentInvitationCount + 1
     });
     
     console.log('초대 보상 지급 완료!');
     
-    // 친구 목록 업데이트 (분리된 작업)
-    await addToFriendsList(inviterUserId, inviteeUserId);
+    // 친구 정보 추가
+    const inviteeData = inviteeDoc.exists() ? inviteeDoc.data() : { username: null, firstName: null, lastName: null };
+    
+    // 기존 friends 배열 가져오기
+    const currentFriends = inviterDoc.data().friends || [];
+    
+    // 새 친구 정보 생성
+    const newFriend = {
+      userId: inviteeUserId,
+      username: inviteeData.username || null,
+      firstName: inviteeData.firstName || null,
+      lastName: inviteeData.lastName || null,
+      joinedAt: new Date().toISOString(),
+      status: 'active'
+    };
+    
+    // friends 배열 업데이트 (이미 있는지 확인 후)
+    const friendExists = currentFriends.some(friend => friend.userId === inviteeUserId);
+    
+    if (!friendExists) {
+      await updateDoc(inviterDocRef, {
+        friends: [...currentFriends, newFriend]
+      });
+    }
     
     return true;
   } catch (error) {

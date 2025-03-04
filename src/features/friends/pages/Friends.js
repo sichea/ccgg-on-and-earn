@@ -18,15 +18,20 @@ const Friends = ({ telegramUser }) => {
       try {
         // telegramUser prop 활용
         const data = await getUserDocument(telegramUser);
+        console.log("가져온 사용자 데이터:", data); // 디버깅용 로그 추가
         setUserData(data);
       } catch (error) {
-        console.error("Error fetching user data:", error);
+        console.error("Error fetching user document:", error);
       } finally {
         setLoading(false);
       }
     };
     
-    fetchUserData();
+    if (telegramUser?.id) {
+      fetchUserData();
+    } else {
+      setLoading(false);
+    }
   }, [telegramUser]);
   
   if (loading) {

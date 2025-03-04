@@ -8,18 +8,26 @@ const handlePendingInvite = async (userId, startParam) => {
   try {
     console.log(`사용자 ${userId}의 초대 코드 처리 시작: ${startParam}`);
     
-    // 모듈 동적 가져오기 
-    const { handleInviteParameter } = await import('../features/friends/utils/inviteUtils');
+    // inviteUtils.js 모듈 가져오기
+    const { validateInviteCode, processInvitation } = await import('../features/friends/utils/inviteUtils');
     
-    // 초대 파라미터 처리
-    const result = await handleInviteParameter(startParam, userId);
-    console.log('초대 코드 처리 결과:', result);
+    // 초대 코드에서 초대자 ID 추출
+    const inviterId = validateInviteCode(startParam);
     
-    // 결과에 관계없이 pendingInviteCode 필드 제거
-    const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, { pendingInviteCode: null });
-    
-    return result;
+    if (inviterId) {
+      // 초대 처리
+      const result = await processInvitation(inviterId, userId);
+      console.log('초대 코드 처리 결과:', result);
+      
+      // pendingInviteCode 필드 제거
+      const userRef = doc(db, 'users', userId);
+      await updateDoc(userRef, { pendingInviteCode: null });
+      
+      return result;
+    } else {
+      console.log('유효하지 않은 초대 코드');
+      return false;
+    }
   } catch (error) {
     console.error('사용자 초대 코드 처리 오류:', error);
     return false;

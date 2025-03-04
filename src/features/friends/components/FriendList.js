@@ -17,7 +17,11 @@ const FriendList = ({ friends }) => {
         <div className="friend-list">
           {friends.map((friend, index) => (
             <div key={index} className="friend-item">
-              <span className="friend-name">{friend.name}</span>
+              <span className="friend-name">
+                {friend.username ? `@${friend.username}` : 
+                (friend.firstName ? `${friend.firstName} ${friend.lastName || ''}` : 
+                `사용자 ${friend.userId}`)}
+              </span>
               <span className="friend-status">{friend.status}</span>
             </div>
           ))}

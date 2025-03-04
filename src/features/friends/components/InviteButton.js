@@ -15,13 +15,13 @@ const InviteButton = ({ telegramUser }) => {
   const generateInviteLink = () => {
     if (!telegramUser?.id) return "";
     
+    // 사용자 ID를 문자열로 확실히 변환
     const userId = telegramUser.id.toString();
     const inviteCode = generateInviteCode(userId);
     
     // 실제 봇 이름으로 변경
     const botName = process.env.REACT_APP_TELEGRAM_BOT_NAME || 'CCGGMingBot';
     
-    // 일치된 형식: ?start=초대코드 (invite_ 접두사 없음)
     return `https://t.me/${botName}?start=${inviteCode}`;
   };
 
