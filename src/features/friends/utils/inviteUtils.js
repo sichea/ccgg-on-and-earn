@@ -6,14 +6,15 @@ export const generateInviteCode = (userId) => {
   // 사용자 ID와 타임스탬프를 조합하여 코드 생성
   const timestamp = Date.now().toString(36);
   const randomStr = Math.random().toString(36).substring(2, 8);
-  return `${userId.substring(0, 6)}_${timestamp}_${randomStr}`;
+  return `${userId}_${timestamp}_${randomStr}`;
 };
 
 // 초대 링크 생성 함수
 export const generateInviteLink = (userId) => {
   const inviteCode = generateInviteCode(userId);
   const botName = process.env.REACT_APP_TELEGRAM_BOT_NAME || 'CCGGMingBot';
-  return `https://t.me/${botName}?start=invite_${inviteCode}`;
+  // invite_ 접두사 없이 일관된 형식 사용
+  return `https://t.me/${botName}?start=${inviteCode}`;
 };
 
 // 초대 완료 처리 함수
@@ -76,13 +77,9 @@ export const processInvitation = async (inviterUserId, inviteeUserId) => {
 };
 
 // 초대 코드 검증 및 초대자 ID 추출 함수
-export const validateInviteCode = (startParam) => {
+export const validateInviteCode = (inviteCode) => {
   try {
-    // 'invite_' 접두사 제거
-    let inviteCode = startParam;
-    if (startParam.startsWith('invite_')) {
-      inviteCode = startParam.substring(7);
-    }
+    console.log('검증 중인 초대 코드:', inviteCode);
     
     // 코드 형식 검증 (userId_timestamp_randomStr)
     const parts = inviteCode.split('_');
@@ -91,33 +88,12 @@ export const validateInviteCode = (startParam) => {
       return null;
     }
     
-    // 초대자 ID 접두사 추출 (실제 전체 ID를 알기 위해서는 데이터베이스 검색 필요)
-    const inviterIdPrefix = parts[0];
-    return inviterIdPrefix;
+    // 초대자 ID 추출 (첫 번째 부분이 ID)
+    const inviterId = parts[0];
+    console.log('추출된 초대자 ID:', inviterId);
+    return inviterId;
   } catch (error) {
     console.error('초대 코드 검증 오류:', error);
-    return null;
-  }
-};
-
-// 초대자 ID 조회 함수 (ID 접두사로 전체 ID 찾기)
-export const findInviterByIdPrefix = async (idPrefix) => {
-  try {
-    // 모든 사용자 조회 (실제 구현에서는 쿼리 최적화 필요)
-    const usersCollectionRef = collection(db, 'users');
-    const usersSnapshot = await getDocs(usersCollectionRef);
-    
-    for (const doc of usersSnapshot.docs) {
-      const userId = doc.id;
-      if (userId.startsWith(idPrefix)) {
-        return userId;
-      }
-    }
-    
-    console.log('해당 접두사와 일치하는 사용자를 찾을 수 없습니다:', idPrefix);
-    return null;
-  } catch (error) {
-    console.error('초대자 ID 조회 오류:', error);
     return null;
   }
 };
@@ -125,21 +101,19 @@ export const findInviterByIdPrefix = async (idPrefix) => {
 // 초대 파라미터 처리 함수 (텔레그램 봇 start 파라미터)
 export const handleInviteParameter = async (startParam, inviteeUserId) => {
   try {
-    if (!startParam || !inviteeUserId) return false;
-    
-    // 접두사가 'invite_'인지 확인
-    if (!startParam.startsWith('invite_')) {
-      console.log('초대 파라미터가 아닙니다:', startParam);
+    if (!startParam || !inviteeUserId) {
+      console.log('필수 파라미터 누락');
       return false;
     }
     
-    // 초대 코드 검증 및 초대자 ID 접두사 추출
-    const inviterIdPrefix = validateInviteCode(startParam);
-    if (!inviterIdPrefix) return false;
+    console.log('초대 파라미터 처리 중:', startParam, '초대된 사용자:', inviteeUserId);
     
-    // 초대자 ID 조회
-    const inviterId = await findInviterByIdPrefix(inviterIdPrefix);
-    if (!inviterId) return false;
+    // 초대 코드 검증 및 초대자 ID 추출
+    const inviterId = validateInviteCode(startParam);
+    if (!inviterId) {
+      console.log('유효하지 않은 초대 코드');
+      return false;
+    }
     
     // 초대 처리
     return await processInvitation(inviterId, inviteeUserId);

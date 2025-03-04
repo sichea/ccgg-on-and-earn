@@ -8,7 +8,7 @@ const InviteButton = ({ telegramUser }) => {
     // 사용자 ID와 타임스탬프를 조합하여 코드 생성
     const timestamp = Date.now().toString(36);
     const randomStr = Math.random().toString(36).substring(2, 8);
-    return `${userId.substring(0, 6)}_${timestamp}_${randomStr}`;
+    return `${userId}_${timestamp}_${randomStr}`;
   };
 
   // 초대 링크 생성 함수
@@ -18,9 +18,11 @@ const InviteButton = ({ telegramUser }) => {
     const userId = telegramUser.id.toString();
     const inviteCode = generateInviteCode(userId);
     
-    // 실제 봇 이름으로 변경해야 합니다 (예: 'your_money_toon_bot')
+    // 실제 봇 이름으로 변경
     const botName = process.env.REACT_APP_TELEGRAM_BOT_NAME || 'CCGGMingBot';
-    return `https://t.me/${botName}?start=invite_${inviteCode}`;
+    
+    // 일치된 형식: ?start=초대코드 (invite_ 접두사 없음)
+    return `https://t.me/${botName}?start=${inviteCode}`;
   };
 
   // 텔레그램 웹앱 API를 통한 친구 초대 함수 (링크 복사)

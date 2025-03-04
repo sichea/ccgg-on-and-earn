@@ -29,10 +29,15 @@ export const getUserDocument = async (telegramUser) => {
       
       // start 파라미터에서 초대 코드 확인 (텔레그램 WebApp startParam)
       const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
+      console.log('초대 파라미터 확인:', startParam);
       
-      if (startParam && startParam.startsWith('invite_')) {
-        // 초대 코드 처리는 사용자 생성 후 별도 함수에서 처리
-        userData.pendingInviteCode = startParam;
+      if (startParam) {
+        // 초대 코드 형식과 일치하는지 확인 (userId_timestamp_randomStr)
+        if (startParam.split('_').length === 3) {
+          // 초대 코드 처리는 사용자 생성 후 별도 함수에서 처리
+          userData.pendingInviteCode = startParam;
+          console.log('초대 코드 저장:', startParam);
+        }
       }
       
       await setDoc(userRef, userData);
@@ -40,9 +45,11 @@ export const getUserDocument = async (telegramUser) => {
       // 초대 코드 처리 (있는 경우)
       if (userData.pendingInviteCode) {
         try {
-          // inviteUtils에서 처리 함수 import - 필요시 import
+          console.log('초대 코드 처리 시작:', userData.pendingInviteCode);
+          // inviteUtils에서 처리 함수 import
           const { handleInviteParameter } = await import('../features/friends/utils/inviteUtils');
-          await handleInviteParameter(userData.pendingInviteCode, userId);
+          const result = await handleInviteParameter(userData.pendingInviteCode, userId);
+          console.log('초대 코드 처리 결과:', result);
           
           // 처리 후 pendingInviteCode 필드 제거
           await updateDoc(userRef, {
@@ -89,30 +96,6 @@ export const updateUserDocument = async (userId, data) => {
     return { ...updatedDoc.data(), id: userId };
   } catch (error) {
     console.error('Error updating user document:', error);
-    return null;
-  }
-};
-
-// ID 접두사로 사용자 찾기
-export const findUserByIdPrefix = async (idPrefix) => {
-  try {
-    if (!idPrefix || idPrefix.length < 3) return null;
-    
-    // 사용자 컬렉션 쿼리
-    const usersRef = collection(db, 'users');
-    const querySnapshot = await getDocs(usersRef);
-    
-    // 접두사가 일치하는 사용자 찾기
-    let matchingUser = null;
-    querySnapshot.forEach((doc) => {
-      if (doc.id.startsWith(idPrefix)) {
-        matchingUser = { id: doc.id, ...doc.data() };
-      }
-    });
-    
-    return matchingUser;
-  } catch (error) {
-    console.error('Error finding user by ID prefix:', error);
     return null;
   }
 };
