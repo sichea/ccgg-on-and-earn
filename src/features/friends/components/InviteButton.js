@@ -19,7 +19,7 @@ const InviteButton = ({ telegramUser }) => {
     const inviteCode = generateInviteCode(userId);
     
     // 실제 봇 이름으로 변경해야 합니다 (예: 'your_money_toon_bot')
-    const botName = process.env.REACT_APP_TELEGRAM_BOT_NAME || 'your_bot_name';
+    const botName = process.env.REACT_APP_TELEGRAM_BOT_NAME || 'CCGGMingBot';
     return `https://t.me/${botName}?start=invite_${inviteCode}`;
   };
 
