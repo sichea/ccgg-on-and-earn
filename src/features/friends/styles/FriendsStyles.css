@@ -71,7 +71,7 @@
   border: 1px solid #393f4a;
   border-radius: 16px;
   padding: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .reward-item {
@@ -104,6 +104,27 @@
   font-size: 20px;
   color: #a0a0a0;
   margin-left: 8px;
+}
+
+.refresh-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.refresh-button {
+  background-color: #232d42;
+  border: 1px solid #393f4a;
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.refresh-button:hover {
+  background-color: #2a3550;
 }
 
 .friend-list-container {
@@ -201,54 +222,6 @@
   background-color: #4CAF50;
 }
 
-.copy-link-button {
-  width: 48px;
-  height: 48px;
-  background-color: #232d42;
-  border: 1px solid #393f4a;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.copy-link-button:hover {
-  background-color: #2a3550;
-}
-
-.login-message-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 16px;
-  text-align: center;
-  background-color: #232d42;
-  border: 1px solid #393f4a;
-  border-radius: 16px;
-  margin: 40px 16px;
-  color: #ffffff;
-}
-
-.telegram-login-button {
-  background-color: #58a6ff;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  padding: 12px 24px;
-  margin-top: 16px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.telegram-login-button:hover {
-  background-color: #3c93ff;
-}
-
 .loading {
   text-align: center;
   padding: 24px 0;
@@ -264,4 +237,28 @@
   border-radius: 8px;
   color: #e53935;
   margin: 24px 0;
+}
+
+.retry-button {
+  background-color: #58a6ff;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.login-message-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+  text-align: center;
+  background-color: #232d42;
+  border: 1px solid #393f4a;
+  border-radius: 16px;
+  margin: 40px 16px;
+  color: #ffffff;
 }

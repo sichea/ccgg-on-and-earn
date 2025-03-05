@@ -16,58 +16,63 @@ const Friends = ({ telegramUser }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (!telegramUser?.id) {
-        setLoading(false);
-        return;
-      }
-      
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const userId = telegramUser.id.toString();
-        console.log('사용자 데이터 가져오기 시작:', userId);
-        
-        // 사용자 문서 가져오기
-        const userRef = doc(db, 'users', userId);
-        const userDoc = await getDoc(userRef);
-        
-        if (userDoc.exists()) {
-          // 사용자 문서가 존재하는 경우
-          console.log('사용자 문서 찾음');
-          const userData = userDoc.data();
-          
-          // 초대 통계 정보 가져오기
-          const invitationStats = await getInvitationStats(userId);
-          
-          // 사용자 데이터와 초대 통계 정보 병합
-          setUserData({
-            ...userData,
-            id: userId,
-            invitationBonus: invitationStats.totalBonus,
-            friends: invitationStats.friends
-          });
-        } else {
-          // 사용자 문서가 존재하지 않는 경우
-          console.log('사용자 문서 없음, 빈 데이터 사용');
-          setUserData({
-            id: userId,
-            points: 0,
-            invitationBonus: 0,
-            friends: []
-          });
-        }
-      } catch (error) {
-        console.error('사용자 데이터 가져오기 오류:', error);
-        setError('사용자 데이터를 불러오는 중 오류가 발생했습니다.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  // 사용자 데이터 갱신 함수
+  const refreshUserData = async () => {
+    if (!telegramUser?.id) {
+      setLoading(false);
+      return;
+    }
     
-    fetchUserData();
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const userId = telegramUser.id.toString();
+      console.log('사용자 데이터 갱신 시작:', userId);
+      
+      // 사용자 문서 가져오기
+      const userRef = doc(db, 'users', userId);
+      const userDoc = await getDoc(userRef);
+      
+      if (userDoc.exists()) {
+        console.log('사용자 문서 찾음');
+        const userData = userDoc.data();
+        
+        // 초대 통계 정보 가져오기
+        const invitationStats = await getInvitationStats(userId);
+        console.log('초대 통계:', invitationStats);
+        
+        // 사용자 데이터와 초대 통계 정보 병합
+        setUserData({
+          ...userData,
+          id: userId,
+          invitationBonus: invitationStats.totalBonus,
+          friends: invitationStats.friends
+        });
+      } else {
+        console.log('사용자 문서 없음, 빈 데이터 사용');
+        setUserData({
+          id: userId,
+          points: 0,
+          invitationBonus: 0,
+          friends: []
+        });
+      }
+    } catch (error) {
+      console.error('사용자 데이터 가져오기 오류:', error);
+      setError('사용자 데이터를 불러오는 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    refreshUserData();
+    
+    // 10초마다 데이터 새로고침 (초대 처리가 지연될 수 있으므로)
+    const intervalId = setInterval(refreshUserData, 10000);
+    
+    return () => clearInterval(intervalId);
   }, [telegramUser]);
   
   // 로딩 중인 경우
@@ -84,6 +89,13 @@ const Friends = ({ telegramUser }) => {
     return (
       <div className="friends-container">
         <div className="error-message">{error}</div>
+        <button 
+          className="retry-button" 
+          onClick={refreshUserData}
+          style={{ margin: '16px auto', display: 'block' }}
+        >
+          다시 시도
+        </button>
       </div>
     );
   }
@@ -117,6 +129,12 @@ const Friends = ({ telegramUser }) => {
           text="Earn 1,000 MOPI for each friend invited" 
           hasInfoIcon={true}
         />
+      </div>
+      
+      <div className="refresh-container">
+        <button className="refresh-button" onClick={refreshUserData}>
+          새로고침
+        </button>
       </div>
       
       <FriendList friends={userData?.friends || []} />

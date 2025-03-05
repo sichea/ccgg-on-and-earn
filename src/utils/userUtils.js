@@ -64,8 +64,9 @@ export const getUserDocument = async (telegramUser) => {
       console.log('초대 파라미터 확인:', startParam);
       
       if (startParam) {
-        // 초대 코드 형식과 일치하는지 확인 (userId_timestamp_randomStr)
-        if (startParam.split('_').length === 3) {
+        // 초대 코드 검증
+        const inviterId = validateInviteCode(startParam);
+        if (inviterId) {
           userData.pendingInviteCode = startParam;
           console.log('초대 코드 저장:', startParam);
         }
@@ -94,6 +95,23 @@ export const getUserDocument = async (telegramUser) => {
       setTimeout(async () => {
         await handlePendingInvite(userId, userData.pendingInviteCode);
       }, 1000);
+    }
+    
+    // start 파라미터가 있고, 아직 초대되지 않은 사용자라면 직접 처리
+    const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
+    if (startParam && !userData.invitedBy) {
+      console.log('실시간 초대 파라미터 발견:', startParam);
+      
+      // 초대 코드 검증
+      const inviterId = validateInviteCode(startParam);
+      if (inviterId) {
+        console.log('직접 초대 처리 시작:', inviterId);
+        await processInvitation(inviterId, userId);
+        
+        // 업데이트된 사용자 정보 반환
+        const updatedUserDoc = await getDoc(userRef);
+        return { ...updatedUserDoc.data(), id: userId };
+      }
     }
     
     return { ...userData, id: userId };
