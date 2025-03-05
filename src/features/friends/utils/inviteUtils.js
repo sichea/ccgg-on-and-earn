@@ -1,5 +1,25 @@
 import { db } from '../../../services/firebase';
-import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
+
+// 초대 코드 생성 함수
+export const generateInviteCode = (userId) => {
+  // 사용자 ID와 타임스탬프, 랜덤 문자열을 조합하여 코드 생성
+  const timestamp = Date.now().toString(36);
+  const randomStr = Math.random().toString(36).substring(2, 8);
+  return `${userId}_${timestamp}_${randomStr}`;
+};
+
+// 초대 링크 생성 함수
+export const generateInviteLink = (userId) => {
+  // 초대 코드 생성
+  const inviteCode = generateInviteCode(userId);
+  
+  // 봇 이름 가져오기 (환경 변수 또는 기본값 사용)
+  const botName = process.env.REACT_APP_TELEGRAM_BOT_NAME || 'CCGGMingBot';
+  
+  // 초대 링크 생성 및 반환
+  return `https://t.me/${botName}?start=${inviteCode}`;
+};
 
 // 초대 코드 검증 및 초대자 ID 추출 함수
 export const validateInviteCode = (inviteCode) => {
@@ -35,146 +55,122 @@ export const validateInviteCode = (inviteCode) => {
   }
 };
 
-// 초대 코드 생성 함수
-export const generateInviteCode = (userId) => {
-  // 사용자 ID와 타임스탬프를 조합하여 코드 생성
-  const timestamp = Date.now().toString(36);
-  const randomStr = Math.random().toString(36).substring(2, 8);
-  return `${userId}_${timestamp}_${randomStr}`;
-};
-
-// 초대 링크 생성 함수
-export const generateInviteLink = (userId) => {
-  const inviteCode = generateInviteCode(userId);
-  const botName = process.env.REACT_APP_TELEGRAM_BOT_NAME || 'CCGGMingBot';
-  // invite_ 접두사 없이 일관된 형식 사용
-  return `https://t.me/${botName}?start=${inviteCode}`;
-};
-
-// 친구 목록에 추가하는 별도 함수
-const addToFriendsList = async (inviterUserId, inviteeUserId) => {
-  try {
-    const inviterDocRef = doc(db, 'users', inviterUserId);
-    await updateDoc(inviterDocRef, {
-      friends: arrayUnion({
-        userId: inviteeUserId,
-        joinedAt: new Date().toISOString(),
-        status: 'active'
-      })
-    });
-    return true;
-  } catch (error) {
-    console.error('친구 목록 업데이트 오류:', error);
-    return false;
-  }
-};
-
 // 초대 완료 처리 함수
-export const processInvitation = async (inviterUserId, inviteeUserId) => {
+export const processInvitation = async (inviterId, inviteeId) => {
   try {
-    console.log(`처리 중: 초대자 ${inviterUserId}, 초대된 사용자 ${inviteeUserId}`);
+    console.log(`초대 처리 시작: 초대자 ${inviterId}, 초대된 사용자 ${inviteeId}`);
     
     // 문자열로 확실히 변환
-    inviterUserId = inviterUserId.toString();
-    inviteeUserId = inviteeUserId.toString();
+    inviterId = inviterId.toString();
+    inviteeId = inviteeId.toString();
     
-    // 기본 검증
-    if (inviterUserId === inviteeUserId) {
+    // 기본 검증 - 자기 자신을 초대할 수 없음
+    if (inviterId === inviteeId) {
       console.log('자기 자신을 초대할 수 없습니다.');
-      return false;
+      return { success: false, message: '자기 자신을 초대할 수 없습니다.' };
     }
     
-    // 초대된 사용자 체크
-    const inviteeDocRef = doc(db, 'users', inviteeUserId);
+    // 초대된 사용자 체크 - 이미 초대된 사용자인지 확인
+    const inviteeDocRef = doc(db, 'users', inviteeId);
     const inviteeDoc = await getDoc(inviteeDocRef);
     
     if (inviteeDoc.exists() && inviteeDoc.data().invitedBy) {
       console.log('이미 초대된 사용자입니다.');
-      return false;
+      return { success: false, message: '이미 초대된 사용자입니다.' };
     }
     
     // 초대자 문서 확인
-    const inviterDocRef = doc(db, 'users', inviterUserId);
+    const inviterDocRef = doc(db, 'users', inviterId);
     const inviterDoc = await getDoc(inviterDocRef);
     
     if (!inviterDoc.exists()) {
       console.log('초대자를 찾을 수 없습니다.');
-      return false;
+      return { success: false, message: '초대자를 찾을 수 없습니다.' };
     }
     
-    // 초대된 사용자 업데이트
+    // 초대된 사용자 정보 가져오기
+    let inviteeName = '알 수 없음';
+    let inviteeUsername = null;
+    let inviteeFirstName = null;
+    let inviteeLastName = null;
+    
+    if (inviteeDoc.exists()) {
+      const inviteeData = inviteeDoc.data();
+      inviteeUsername = inviteeData.username;
+      inviteeFirstName = inviteeData.firstName;
+      inviteeLastName = inviteeData.lastName;
+      
+      // 사용자명 결정 (우선순위: username > firstName+lastName > userId)
+      if (inviteeUsername) {
+        inviteeName = `@${inviteeUsername}`;
+      } else if (inviteeFirstName) {
+        inviteeName = `${inviteeFirstName} ${inviteeLastName || ''}`.trim();
+      } else {
+        inviteeName = `사용자 ${inviteeId}`;
+      }
+    }
+    
+    // 트랜잭션 처리를 위한 업데이트 작업 - 원자적 연산 사용
+    
+    // 1. 초대된 사용자 업데이트
     await updateDoc(inviteeDocRef, {
-      invitedBy: inviterUserId,
+      invitedBy: inviterId,
       invitedAt: new Date()
     });
     
-    // 초대자에게 보상 지급
-    const currentPoints = inviterDoc.data().points || 0;
-    const currentInvitationBonus = inviterDoc.data().invitationBonus || 0;
-    const currentInvitationCount = inviterDoc.data().invitationCount || 0;
-    
-    await updateDoc(inviterDocRef, {
-      points: currentPoints + 1000,
-      invitationBonus: currentInvitationBonus + 1000,
-      invitationCount: currentInvitationCount + 1
-    });
-    
-    console.log('초대 보상 지급 완료!');
-    
-    // 친구 정보 추가
-    const inviteeData = inviteeDoc.exists() ? inviteeDoc.data() : { username: null, firstName: null, lastName: null };
-    
-    // 기존 friends 배열 가져오기
-    const currentFriends = inviterDoc.data().friends || [];
-    
-    // 새 친구 정보 생성
+    // 2. 초대자에게 보상 지급 및 친구 추가
     const newFriend = {
-      userId: inviteeUserId,
-      username: inviteeData.username || null,
-      firstName: inviteeData.firstName || null,
-      lastName: inviteeData.lastName || null,
+      userId: inviteeId,
+      username: inviteeUsername,
+      firstName: inviteeFirstName,
+      lastName: inviteeLastName,
       joinedAt: new Date().toISOString(),
       status: 'active'
     };
     
-    // friends 배열 업데이트 (이미 있는지 확인 후)
-    const friendExists = currentFriends.some(friend => friend.userId === inviteeUserId);
+    await updateDoc(inviterDocRef, {
+      // increment 함수 사용으로 원자적 연산 수행
+      points: increment(1000),
+      invitationBonus: increment(1000),
+      invitationCount: increment(1),
+      // arrayUnion 함수로 중복 없이 배열에 추가
+      friends: arrayUnion(newFriend)
+    });
     
-    if (!friendExists) {
-      await updateDoc(inviterDocRef, {
-        friends: [...currentFriends, newFriend]
-      });
-    }
-    
-    return true;
+    console.log('초대 처리 성공!');
+    return { 
+      success: true, 
+      message: '초대 처리 성공!',
+      inviteeName: inviteeName
+    };
   } catch (error) {
     console.error('초대 처리 오류:', error);
-    return false;
+    return { success: false, message: `초대 처리 중 오류 발생: ${error.message}` };
   }
 };
 
-// 초대 파라미터 처리 함수 (텔레그램 봇 start 파라미터)
-export const handleInviteParameter = async (startParam, inviteeUserId) => {
+// 초대 링크 파라미터 처리 함수 (텔레그램 봇 start 파라미터)
+export const handleInviteParameter = async (startParam, inviteeId) => {
   try {
-    if (!startParam || !inviteeUserId) {
+    if (!startParam || !inviteeId) {
       console.log('필수 파라미터 누락');
-      return false;
+      return { success: false, message: '필수 파라미터가 누락되었습니다.' };
     }
     
-    console.log('초대 파라미터 처리 중:', startParam, '초대된 사용자:', inviteeUserId);
+    console.log('초대 파라미터 처리 중:', startParam, '초대된 사용자:', inviteeId);
     
     // 초대 코드 검증 및 초대자 ID 추출
     const inviterId = validateInviteCode(startParam);
     if (!inviterId) {
       console.log('유효하지 않은 초대 코드');
-      return false;
+      return { success: false, message: '유효하지 않은 초대 코드입니다.' };
     }
     
     // 초대 처리
-    return await processInvitation(inviterId, inviteeUserId);
+    return await processInvitation(inviterId, inviteeId);
   } catch (error) {
     console.error('초대 파라미터 처리 오류:', error);
-    return false;
+    return { success: false, message: `초대 파라미터 처리 중 오류 발생: ${error.message}` };
   }
 };
 
@@ -193,9 +189,17 @@ export const getInvitationStats = async (userId) => {
       };
     }
     
-    return null;
+    return {
+      totalInvited: 0,
+      totalBonus: 0,
+      friends: []
+    };
   } catch (error) {
-    console.error('Error getting invitation stats:', error);
-    return null;
+    console.error('초대 통계 조회 오류:', error);
+    return {
+      totalInvited: 0,
+      totalBonus: 0,
+      friends: []
+    };
   }
 };

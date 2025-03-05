@@ -192,6 +192,11 @@
   background-color: #3c93ff;
 }
 
+.invite-button:disabled {
+  background-color: #3a4a63;
+  cursor: not-allowed;
+}
+
 .invite-button.success {
   background-color: #4CAF50;
 }
@@ -242,4 +247,21 @@
 
 .telegram-login-button:hover {
   background-color: #3c93ff;
+}
+
+.loading {
+  text-align: center;
+  padding: 24px 0;
+  font-size: 16px;
+  color: #a0a0a0;
+}
+
+.error-message {
+  text-align: center;
+  padding: 16px;
+  background-color: rgba(229, 57, 53, 0.1);
+  border: 1px solid #e53935;
+  border-radius: 8px;
+  color: #e53935;
+  margin: 24px 0;
 }

@@ -1,5 +1,6 @@
-import { doc, getDoc, setDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
+import { validateInviteCode, processInvitation } from '../features/friends/utils/inviteUtils';
 
 // 사용자 초대 코드 처리 함수
 const handlePendingInvite = async (userId, startParam) => {
@@ -7,9 +8,6 @@ const handlePendingInvite = async (userId, startParam) => {
   
   try {
     console.log(`사용자 ${userId}의 초대 코드 처리 시작: ${startParam}`);
-    
-    // inviteUtils.js 모듈 가져오기
-    const { validateInviteCode, processInvitation } = await import('../features/friends/utils/inviteUtils');
     
     // 초대 코드에서 초대자 ID 추출
     const inviterId = validateInviteCode(startParam);
@@ -26,11 +24,11 @@ const handlePendingInvite = async (userId, startParam) => {
       return result;
     } else {
       console.log('유효하지 않은 초대 코드');
-      return false;
+      return { success: false, message: '유효하지 않은 초대 코드입니다.' };
     }
   } catch (error) {
     console.error('사용자 초대 코드 처리 오류:', error);
-    return false;
+    return { success: false, message: `초대 코드 처리 중 오류 발생: ${error.message}` };
   }
 };
 
@@ -45,6 +43,7 @@ export const getUserDocument = async (telegramUser) => {
     const userDoc = await getDoc(userRef);
     
     if (!userDoc.exists()) {
+      console.log('사용자 문서가 없어 새로 생성합니다.', userId);
       // 기본 사용자 문서 생성
       const userData = {
         points: 0,
@@ -88,9 +87,18 @@ export const getUserDocument = async (telegramUser) => {
       return { ...freshUserDoc.data(), id: userId };
     }
     
-    return { ...userDoc.data(), id: userId };
+    // 기존 사용자 문서에 pendingInviteCode가 있는지 확인하고 처리
+    const userData = userDoc.data();
+    if (userData.pendingInviteCode) {
+      console.log('처리되지 않은 초대 코드 발견:', userData.pendingInviteCode);
+      setTimeout(async () => {
+        await handlePendingInvite(userId, userData.pendingInviteCode);
+      }, 1000);
+    }
+    
+    return { ...userData, id: userId };
   } catch (error) {
-    console.error('Error fetching/creating user document:', error);
+    console.error('사용자 문서 조회/생성 오류:', error);
     return null;
   }
 };
@@ -105,62 +113,29 @@ export const updateUserDocument = async (userId, data) => {
     const userDoc = await getDoc(userRef);
     
     if (userDoc.exists()) {
-      await updateDoc(userRef, data);
+      // 기존 문서 업데이트
+      await updateDoc(userRef, {
+        ...data,
+        updatedAt: new Date()
+      });
     } else {
+      // 문서가 없는 경우 새로 생성
       await setDoc(userRef, { 
         ...data, 
         createdAt: new Date(),
+        updatedAt: new Date(),
         // 친구 초대 관련 필드도 기본값으로 초기화
-        invitationBonus: 0,
-        invitationCount: 0,
-        friends: []
+        invitationBonus: data.invitationBonus || 0,
+        invitationCount: data.invitationCount || 0,
+        friends: data.friends || []
       });
     }
     
+    // 업데이트된 문서 조회하여 반환
     const updatedDoc = await getDoc(userRef);
     return { ...updatedDoc.data(), id: userId };
   } catch (error) {
-    console.error('Error updating user document:', error);
+    console.error('사용자 문서 업데이트 오류:', error);
     return null;
-  }
-};
-
-// 테스트 함수 - 콘솔에서 직접 실행할 수 있음
-export const testInvitationBonus = async (inviterId) => {
-  try {
-    const userRef = doc(db, 'users', inviterId);
-    const before = await getDoc(userRef);
-    
-    if (!before.exists()) {
-      console.error('사용자를 찾을 수 없습니다:', inviterId);
-      return false;
-    }
-    
-    console.log('테스트 전 상태:', {
-      보너스: before.data().invitationBonus || 0,
-      포인트: before.data().points || 0,
-      초대수: before.data().invitationCount || 0
-    });
-    
-    // 업데이트 시도
-    await updateDoc(userRef, {
-      invitationBonus: (before.data().invitationBonus || 0) + 1000,
-      points: (before.data().points || 0) + 1000,
-      invitationCount: (before.data().invitationCount || 0) + 1
-    });
-    
-    // 업데이트 후 확인
-    const after = await getDoc(userRef);
-    
-    console.log('테스트 후 상태:', {
-      보너스: after.data().invitationBonus || 0,
-      포인트: after.data().points || 0,
-      초대수: after.data().invitationCount || 0
-    });
-    
-    return true;
-  } catch (error) {
-    console.error('테스트 중 오류 발생:', error);
-    return false;
   }
 };
