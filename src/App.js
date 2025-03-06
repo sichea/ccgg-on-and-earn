@@ -1,4 +1,3 @@
-// src/App.js
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import NavigationBar from './components/layout/NavigationBar';
@@ -6,6 +5,7 @@ import AppRoutes from './routes';
 import './styles/global.css';
 import { doc, getDoc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
 import { db } from './services/firebase';
+import { validateInviteCode } from './features/friends/utils/inviteUtils';
 
 function App() {
   const [telegramUser, setTelegramUser] = useState(null);
@@ -48,15 +48,8 @@ function App() {
         if (!startParam) return;
         
         // 초대 코드 파싱
-        let inviterId;
-        if (startParam.startsWith('invite_')) {
-          inviterId = startParam.replace('invite_', '');
-        } else if (startParam.startsWith('direct_')) {
-          inviterId = startParam.replace('direct_', '');
-        } else if (startParam.split('_').length === 3) {
-          // 이전 형식 (userId_timestamp_randomStr)
-          inviterId = startParam.split('_')[0];
-        } else {
+        const inviterId = validateInviteCode(startParam);
+        if (!inviterId) {
           console.log('유효하지 않은 초대 코드 형식');
           return;
         }
@@ -96,16 +89,6 @@ function App() {
           invitedAt: new Date()
         });
         
-        // 초대자 업데이트 - 직접 값을 계산하여 업데이트
-        console.log('초대자 문서 업데이트 시작');
-        
-        // 초대자의 현재 데이터 가져오기
-        const currentInviterData = inviterDoc.data();
-        const currentBonus = currentInviterData.invitationBonus || 0;
-        const currentCount = currentInviterData.invitationCount || 0;
-        const currentPoints = currentInviterData.points || 0;
-        const currentFriends = currentInviterData.friends || [];
-        
         // 새 친구 정보
         const newFriend = {
           userId: inviteeId,
@@ -116,24 +99,18 @@ function App() {
           status: 'active'
         };
         
-        // 이미 친구 목록에 있는지 확인
-        const friendExists = currentFriends.some(friend => friend.userId === inviteeId);
-        const updatedFriends = friendExists 
-          ? currentFriends 
-          : [...currentFriends, newFriend];
-        
-        // 명시적으로 값 설정하여 업데이트
-        console.log('초대자 문서 업데이트 진행:', {
-          newPoints: currentPoints + 1000,
-          newBonus: currentBonus + 1000,
-          newCount: currentCount + 1
+        // 원자적 연산을 사용하여 초대자 업데이트
+        console.log('초대자 업데이트:', {
+          userId: inviterId,
+          bonus: 1000,
+          friend: newFriend
         });
         
         await updateDoc(inviterDocRef, {
-          points: currentPoints + 1000,
-          invitationBonus: currentBonus + 1000,
-          invitationCount: currentCount + 1,
-          friends: updatedFriends,
+          points: increment(1000),
+          invitationBonus: increment(1000),
+          invitationCount: increment(1),
+          friends: arrayUnion(newFriend),
           updatedAt: new Date()
         });
         

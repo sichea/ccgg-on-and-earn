@@ -23,8 +23,8 @@ const InviteButton = ({ telegramUser }) => {
       // 봇 이름 가져오기
       const botName = process.env.REACT_APP_TELEGRAM_BOT_NAME || 'CCGGMingBot';
       
-      // 초대 링크 생성 - direct_ 형식 사용
-      const inviteLink = `https://t.me/${botName}?start=direct_${userId}`;
+      // startapp 파라미터를 사용한 초대 링크 생성
+      const inviteLink = `https://t.me/${botName}/game?startapp=${userId}`;
       console.log(`생성된 초대 링크: ${inviteLink}`);
       
       // 클립보드에 복사

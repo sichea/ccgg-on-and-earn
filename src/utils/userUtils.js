@@ -1,6 +1,6 @@
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
 import { db } from '../services/firebase';
-import { validateInviteCode, processInvitation } from '../features/friends/utils/inviteUtils';
+import { validateInviteCode } from '../features/friends/utils/inviteUtils';
 
 // 사용자 초대 코드 처리 함수
 const handlePendingInvite = async (userId, startParam) => {
@@ -12,20 +12,70 @@ const handlePendingInvite = async (userId, startParam) => {
     // 초대 코드에서 초대자 ID 추출
     const inviterId = validateInviteCode(startParam);
     
-    if (inviterId) {
-      // 초대 처리
-      const result = await processInvitation(inviterId, userId);
-      console.log('초대 코드 처리 결과:', result);
-      
-      // pendingInviteCode 필드 제거
-      const userRef = doc(db, 'users', userId);
-      await updateDoc(userRef, { pendingInviteCode: null });
-      
-      return result;
-    } else {
+    if (!inviterId) {
       console.log('유효하지 않은 초대 코드');
       return { success: false, message: '유효하지 않은 초대 코드입니다.' };
     }
+    
+    // 자기 자신을 초대할 수 없음
+    if (inviterId === userId) {
+      console.log('자기 자신을 초대할 수 없습니다.');
+      return { success: false, message: '자기 자신을 초대할 수 없습니다.' };
+    }
+    
+    // 초대자 확인
+    const inviterDocRef = doc(db, 'users', inviterId);
+    const inviterDoc = await getDoc(inviterDocRef);
+    
+    if (!inviterDoc.exists()) {
+      console.log('초대자를 찾을 수 없습니다.');
+      return { success: false, message: '초대자를 찾을 수 없습니다.' };
+    }
+    
+    // 초대 받은 사용자 확인
+    const inviteeDocRef = doc(db, 'users', userId);
+    const inviteeDoc = await getDoc(inviteeDocRef);
+    
+    if (inviteeDoc.exists() && inviteeDoc.data().invitedBy) {
+      console.log('이미 초대된 사용자입니다.');
+      return { success: false, message: '이미 초대된 사용자입니다.' };
+    }
+    
+    // 초대된 사용자 업데이트
+    console.log('초대받은 사용자 문서 업데이트');
+    await updateDoc(inviteeDocRef, {
+      invitedBy: inviterId,
+      invitedAt: new Date()
+    });
+    
+    // 초대자 정보 업데이트 - 원자적 연산 사용
+    console.log('초대자 문서 업데이트 시작');
+    
+    // 새 친구 정보
+    const newFriend = {
+      userId: userId,
+      username: inviteeDoc.exists() ? inviteeDoc.data().username : null,
+      firstName: inviteeDoc.exists() ? inviteeDoc.data().firstName : null,
+      lastName: inviteeDoc.exists() ? inviteeDoc.data().lastName : null,
+      joinedAt: new Date().toISOString(),
+      status: 'active'
+    };
+    
+    // 명시적으로 업데이트
+    await updateDoc(inviterDocRef, {
+      points: increment(1000),
+      invitationBonus: increment(1000),
+      invitationCount: increment(1),
+      friends: arrayUnion(newFriend),
+      updatedAt: new Date()
+    });
+    
+    console.log('초대 처리 완료!');
+    
+    // pendingInviteCode 필드 제거
+    await updateDoc(inviteeDocRef, { pendingInviteCode: null });
+    
+    return { success: true, message: '초대 처리 성공!' };
   } catch (error) {
     console.error('사용자 초대 코드 처리 오류:', error);
     return { success: false, message: `초대 코드 처리 중 오류 발생: ${error.message}` };
@@ -95,23 +145,6 @@ export const getUserDocument = async (telegramUser) => {
       setTimeout(async () => {
         await handlePendingInvite(userId, userData.pendingInviteCode);
       }, 1000);
-    }
-    
-    // start 파라미터가 있고, 아직 초대되지 않은 사용자라면 직접 처리
-    const startParam = window.Telegram?.WebApp?.initDataUnsafe?.start_param;
-    if (startParam && !userData.invitedBy) {
-      console.log('실시간 초대 파라미터 발견:', startParam);
-      
-      // 초대 코드 검증
-      const inviterId = validateInviteCode(startParam);
-      if (inviterId) {
-        console.log('직접 초대 처리 시작:', inviterId);
-        await processInvitation(inviterId, userId);
-        
-        // 업데이트된 사용자 정보 반환
-        const updatedUserDoc = await getDoc(userRef);
-        return { ...updatedUserDoc.data(), id: userId };
-      }
     }
     
     return { ...userData, id: userId };
