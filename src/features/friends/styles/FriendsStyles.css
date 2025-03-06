@@ -37,6 +37,126 @@
   height: auto;
 }
 
+/* 내 초대 코드 섹션 스타일 */
+.my-invite-code-container {
+  background-color: #232d42;
+  border: 1px solid #393f4a;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 18px;
+  margin-bottom: 16px;
+  color: #ffffff;
+  text-align: center;
+}
+
+.invite-code-box {
+  display: flex;
+  background-color: #1c2333;
+  border: 1px solid #393f4a;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.invite-code {
+  font-size: 20px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: #58a6ff;
+}
+
+.copy-button {
+  background-color: #58a6ff;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.copy-button:hover {
+  background-color: #4096fe;
+}
+
+.copy-button.success {
+  background-color: #4CAF50;
+}
+
+.invite-code-info {
+  font-size: 14px;
+  color: #a0a0a0;
+  text-align: center;
+}
+
+/* 초대 코드 입력 섹션 스타일 */
+.code-input-container {
+  background-color: #232d42;
+  border: 1px solid #393f4a;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.code-input-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.code-input {
+  flex: 1;
+  background-color: #1c2333;
+  border: 1px solid #393f4a;
+  border-radius: 8px;
+  padding: 12px;
+  color: #ffffff;
+  font-size: 16px;
+}
+
+.submit-button {
+  background-color: #58a6ff;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 0 20px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.submit-button:disabled {
+  background-color: #3a4a63;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #e53935;
+  font-size: 14px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.success-message {
+  color: #4CAF50;
+  font-size: 14px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.already-invited {
+  color: #f9a825;
+  font-size: 14px;
+  margin-top: 8px;
+  text-align: center;
+}
+
 .invitation-bonus-container {
   background-color: #232d42;
   border: 1px solid #393f4a;
@@ -100,12 +220,6 @@
   color: #ffffff;
 }
 
-.info-icon {
-  font-size: 20px;
-  color: #a0a0a0;
-  margin-left: 8px;
-}
-
 .friend-list-section {
   margin-bottom: 24px;
 }
@@ -166,35 +280,6 @@
 .friend-status {
   color: #a0a0a0;
   font-size: 14px;
-}
-
-.invite-button {
-  background-color: #58a6ff;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  padding: 16px;
-  margin-top: auto;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s;
-}
-
-.invite-button:hover {
-  background-color: #3c93ff;
-}
-
-.invite-button:disabled {
-  background-color: #3a4a63;
-  cursor: not-allowed;
-}
-
-.invite-button.success {
-  background-color: #4CAF50;
 }
 
 .loading {
