@@ -15,8 +15,11 @@ import TaskDetail from '../features/task/pages/TaskDetail';
 // Earn 관련 페이지
 import DailyClaim from '../features/earn/pages/DailyClaim';
 
-// Friends 페이지 추가
+// Friends 페이지
 import Friends from '../features/friends/pages/Friends';
+
+// Shop 페이지 추가 (이전 Wallet을 대체)
+import Shop from '../features/shop/pages/Shop';
 
 const AppRoutes = ({ telegramUser, isAdmin }) => {
   return (
@@ -35,11 +38,12 @@ const AppRoutes = ({ telegramUser, isAdmin }) => {
         {/* Earn 라우트 */}
         <Route path="/earn" element={<DailyClaim telegramUser={telegramUser} isAdmin={isAdmin} />} />
         
-        {/* Friends 라우트 - 구현된 컴포넌트로 변경 */}
+        {/* Friends 라우트 */}
         <Route path="/friends" element={<Friends telegramUser={telegramUser} isAdmin={isAdmin} />} />
         
-        {/* Wallet 라우트는 아직 미구현 상태 */}
-        <Route path="/wallet" element={<div className="p-4 text-white">Wallet 기능 - 준비 중</div>} />
+        {/* Shop 라우트 */}
+        <Route path="/shop" element={<Shop telegramUser={telegramUser} isAdmin={isAdmin} />} />
+        <Route path="/shop/wallet" element={<Shop telegramUser={telegramUser} isAdmin={isAdmin} walletTab={true} />} />
       </Routes>
     </div>
   );

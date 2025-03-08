@@ -1,4 +1,4 @@
-// NavigationBar.js 원래 버전으로 복원
+// src/components/layout/NavigationBar.js 수정
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './NavigationBar.css';
@@ -47,11 +47,11 @@ const NavigationBar = () => {
       </div>
       
       <div 
-        className={`nav-item ${isActive('/wallet') ? 'active' : ''}`}
-        onClick={() => navigate('/wallet')}
+        className={`nav-item ${isActive('/shop') ? 'active' : ''}`}
+        onClick={() => navigate('/shop')}
       >
-        <div className="nav-icon">💼</div>
-        <div className="nav-label">Wallet</div>
+        <div className="nav-icon">🛒</div>
+        <div className="nav-label">Shop</div>
       </div>
     </div>
   );
