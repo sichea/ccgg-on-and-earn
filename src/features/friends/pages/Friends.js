@@ -108,7 +108,7 @@ const Friends = ({ telegramUser }) => {
       const result = await processInvitation(inputCode.trim(), userId);
       
       if (result.success) {
-        setSuccessMessage(`${result.inviterName}님의 초대가 처리되었습니다! ${result.inviteeReward} MOPI를 받았습니다.`);
+        setSuccessMessage(`${result.inviterName}님의 초대가 처리되었습니다! ${result.inviteeReward} CGP를 받았습니다.`);
         setInputCode('');
         
         // 사용자 데이터 다시 불러오기
@@ -205,13 +205,13 @@ const Friends = ({ telegramUser }) => {
         <div className="reward-item">
           <div className="reward-icon">🪙</div>
           <div className="reward-text">
-            친구 초대시 1,000 MOPI 획득
+            친구 초대시 10 CGP 획득
           </div>
         </div>
         <div className="reward-item">
           <div className="reward-icon">👤</div>
           <div className="reward-text">
-            초대받은 친구는 500 MOPI 획득
+            초대받은 친구는 5 CGP 획득
           </div>
         </div>
       </div>

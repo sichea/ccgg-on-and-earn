@@ -1,4 +1,4 @@
-// src/components/layout/NavigationBar.js 수정
+// src/components/layout/NavigationBar.js
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './NavigationBar.css';
@@ -15,11 +15,11 @@ const NavigationBar = () => {
   return (
     <div className="navigation-bar">
       <div 
-        className={`nav-item ${isActive('/') ? 'active' : ''}`}
-        onClick={() => navigate('/')}
+        className={`nav-item ${isActive('/earn') ? 'active' : ''}`}
+        onClick={() => navigate('/earn')}
       >
-        <div className="nav-icon">🎟️</div>
-        <div className="nav-label">Raffle</div>
+        <div className="nav-icon">💰</div>
+        <div className="nav-label">Earn</div>
       </div>
       
       <div 
@@ -31,11 +31,11 @@ const NavigationBar = () => {
       </div>
       
       <div 
-        className={`nav-item ${isActive('/earn') ? 'active' : ''}`}
-        onClick={() => navigate('/earn')}
+        className={`nav-item ${isActive('/') && !isActive('/earn') && !isActive('/task') && !isActive('/friends') && !isActive('/shop') ? 'active' : ''}`}
+        onClick={() => navigate('/')}
       >
-        <div className="nav-icon">💰</div>
-        <div className="nav-label">Earn</div>
+        <div className="nav-icon">🎟️</div>
+        <div className="nav-label">Raffle</div>
       </div>
       
       <div 

@@ -8,7 +8,7 @@ import ccggLogo from "../../../assets/images/ccgg-logo.png";
 
 const DailyClaim = ({ telegramUser, isAdmin }) => {
   const [userPoints, setUserPoints] = useState(0);
-  const [dailyAmount, setDailyAmount] = useState(1000);
+  const [dailyAmount, setDailyAmount] = useState(10); // 10 CGP로 변경
   const [lastClaimTime, setLastClaimTime] = useState(null);
   const [canClaim, setCanClaim] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(null);
@@ -41,7 +41,7 @@ const DailyClaim = ({ telegramUser, isAdmin }) => {
         const settingsDoc = await getDoc(settingsRef);
         
         if (settingsDoc.exists()) {
-          setDailyAmount(settingsDoc.data().amount || 1000);
+          setDailyAmount(settingsDoc.data().amount || 10); // 기본값 10으로 변경
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -136,7 +136,7 @@ const DailyClaim = ({ telegramUser, isAdmin }) => {
     <div className="daily-claim-container">
       <div className="points-display">
         <span className="points-label">CCGG</span>
-        <span className="points-value">{userPoints} <span className="mopi-icon">MOPI</span></span>
+        <span className="points-value">{userPoints} <span className="mopi-icon">CGP</span></span>
       </div>
       
       <div className="claim-section">

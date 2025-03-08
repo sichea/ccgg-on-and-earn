@@ -1,7 +1,7 @@
 // features/task/pages/TaskList.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, getDocs, query, where, doc, deleteDoc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, deleteDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../../../services/firebase';
 import { getUserDocument, updateUserDocument } from '../../../utils/userUtils';
 import '../styles/TaskStyles.css';
@@ -171,7 +171,7 @@ const TaskList = ({ isAdmin, telegramUser }) => {
       
       // 약간의 지연 후 참여 처리 및 알림
       setTimeout(() => {
-        alert(`태스크 참여 완료! ${task.reward} MOPI 획득!`);
+        alert(`태스크 참여 완료! ${task.reward} CGP 획득!`);
       }, 500);
 
     } catch (error) {
@@ -283,7 +283,7 @@ const TaskList = ({ isAdmin, telegramUser }) => {
         </>
       )}
       
-      <div className="category-title" style={{ marginTop: '24px' }}>Partners</div>
+<div className="category-title" style={{ marginTop: '24px' }}>Partners</div>
       {loading ? (
         <div className="loading-text">로딩 중...</div>
       ) : (

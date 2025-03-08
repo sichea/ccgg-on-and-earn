@@ -39,7 +39,7 @@ const TaskCard = ({ task, telegramUser, isAdmin, onClick }) => {
         }
       }
       
-      alert(`태스크 참여 완료! ${task.reward} MOPI 획득!`);
+      alert(`태스크 참여 완료! ${task.reward} CGP 획득!`);
       window.location.reload(); // UI 갱신을 위한 새로고침
     } catch (error) {
       console.error('태스크 참여 오류:', error);
@@ -67,29 +67,40 @@ const TaskCard = ({ task, telegramUser, isAdmin, onClick }) => {
   
   return (
     <div className="task-card" onClick={onClick}>
-      <div className="task-card-content">
-        <div className="task-card-title">
-          {renderPlatformIcon()} {task.title}
+      <div className="task-card-left">
+        <div className="task-card-link-icon">🔗</div>
+        <div>
+          <div className="task-card-title">{task.title}</div>
+          <div className="task-card-rewards">
+            <span className="coin-icon">🪙</span>
+            <span className="reward-value">{task.reward || 0}</span>
+          </div>
         </div>
-        <div className="task-card-description">{task.description}</div>
-        
-        {task.link && (
-          <a 
-            href={task.link} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="task-card-link"
-            onClick={(e) => e.stopPropagation()} // 카드 클릭 이벤트 전파 방지
-          >
-            링크 열기 →
-          </a>
-        )}
       </div>
       
       <div className="task-card-actions">
-        <div className="task-reward">
-          <span className="reward-value">+ {task.reward} MOPI</span>
-        </div>
+        {isAdmin && (
+          <>
+            <button 
+              className="task-card-action-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEditTask(task.id);
+              }}
+            >
+              ✏️
+            </button>
+            <button 
+              className="task-card-action-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteTask(task.id);
+              }}
+            >
+              🗑️
+            </button>
+          </>
+        )}
         
         <button
           onClick={handleJoin}

@@ -132,7 +132,7 @@ const Shop = ({ telegramUser, isAdmin, walletTab = false }) => {
     if (!userId || isPurchasing) return;
     
     if (userPoints < product.price) {
-      alert('MOPI가 부족합니다.');
+      alert('CGP가 부족합니다.');
       return;
     }
     
@@ -141,7 +141,7 @@ const Shop = ({ telegramUser, isAdmin, walletTab = false }) => {
       return;
     }
     
-    const confirmPurchase = window.confirm(`${product.name}을(를) ${product.price} MOPI로 구매하시겠습니까?`);
+    const confirmPurchase = window.confirm(`${product.name}을(를) ${product.price} CGP로 구매하시겠습니까?`);
     if (!confirmPurchase) return;
     
     setIsPurchasing(true);
@@ -374,7 +374,7 @@ const Shop = ({ telegramUser, isAdmin, walletTab = false }) => {
               
               <div className="product-modal-price">
                 <span className="product-price-icon">🪙</span>
-                {selectedProduct.price} MOPI
+                {selectedProduct.price} CGP
               </div>
               
               <p className="product-modal-desc">{selectedProduct.description}</p>
@@ -392,7 +392,7 @@ const Shop = ({ telegramUser, isAdmin, walletTab = false }) => {
                   {isPurchasing 
                     ? '처리 중...' 
                     : userPoints < selectedProduct.price 
-                      ? 'MOPI 부족' 
+                      ? 'CGP 부족' 
                       : selectedProduct.stock <= 0 
                         ? '품절' 
                         : '구매하기'}
@@ -415,7 +415,7 @@ const ShopTab = ({ products, userPoints, onProductSelect }) => {
     <div>
       <div className="wallet-info">
         <div className="wallet-info-header">
-          <span className="balance-title">내 MOPI</span>
+          <span className="balance-title">내 CGP</span>
           <span className="wallet-balance">
             <span className="wallet-balance-icon">🪙</span>
             {userPoints}
@@ -456,7 +456,7 @@ const ShopTab = ({ products, userPoints, onProductSelect }) => {
                   disabled={userPoints < product.price || product.stock <= 0}
                 >
                   {userPoints < product.price 
-                    ? 'MOPI 부족' 
+                    ? 'CGP 부족' 
                     : product.stock <= 0 
                       ? '품절' 
                       : '구매하기'}
@@ -479,7 +479,7 @@ const WalletTab = ({ userPoints, purchases }) => {
     <div>
       <div className="wallet-info">
         <div className="wallet-info-header">
-          <span className="balance-title">내 MOPI</span>
+          <span className="balance-title">내 CGP</span>
           <span className="wallet-balance">
             <span className="wallet-balance-icon">🪙</span>
             {userPoints}
@@ -502,7 +502,7 @@ const WalletTab = ({ userPoints, purchases }) => {
               </div>
               <div className="purchase-price">
                 <span className="product-price-icon">🪙</span>
-                {purchase.price} MOPI
+                {purchase.price} CGP
               </div>
             </div>
           ))}
@@ -655,7 +655,7 @@ const AdminTab = ({ newProduct, onInputChange, onAddProduct, onDeleteProduct, pr
           </div>
           
           <div className="form-group">
-            <label className="form-label">가격 (MOPI)</label>
+            <label className="form-label">가격 (CGP)</label>
             <input
               type="number"
               name="price"
@@ -762,7 +762,7 @@ const AdminTab = ({ newProduct, onInputChange, onAddProduct, onDeleteProduct, pr
               </div>
               <div className="purchase-price">
                 <span className="product-price-icon">🪙</span>
-                {product.price} MOPI
+                {product.price} CGP
               </div>
               <div style={{ marginTop: '8px', fontSize: '12px', color: '#a0a0a0' }}>
                 재고: {product.stock}개 / 상태: {product.isAvailable ? '판매 중' : '판매 중지'}

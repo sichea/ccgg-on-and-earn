@@ -96,28 +96,28 @@ export const processInvitation = async (inviterCode, inviteeId) => {
       status: 'active'
     };
     
-    // 초대 받은 사용자 업데이트 - 500 MOPI 보상
+    // 초대 받은 사용자 업데이트 - 5 CGP 보상 (500 -> 5)
     await updateDoc(inviteeDocRef, {
       invitedBy: inviterId,
       invitedAt: new Date(),
-      points: increment(500), // 초대 받은 사람 500 MOPI 보상
+      points: increment(5), // 초대 받은 사람 5 CGP 보상
       rewardHistory: arrayUnion({
         type: 'invitation_reward',
-        amount: 500,
+        amount: 5,
         date: new Date().toISOString(),
         description: '친구 초대 보상'
       })
     });
     
-    // 초대자 업데이트 - 1000 MOPI 보상
+    // 초대자 업데이트 - 10 CGP 보상 (1000 -> 10)
     await updateDoc(inviterDocRef, {
-      points: increment(1000), // 초대한 사람 1000 MOPI 보상
-      invitationBonus: increment(1000),
+      points: increment(10), // 초대한 사람 10 CGP 보상
+      invitationBonus: increment(10),
       invitationCount: increment(1),
       friends: arrayUnion(newFriend),
       rewardHistory: arrayUnion({
         type: 'invitation_bonus',
-        amount: 1000,
+        amount: 10,
         date: new Date().toISOString(),
         description: '친구 초대 보너스'
       }),
@@ -128,8 +128,8 @@ export const processInvitation = async (inviterCode, inviteeId) => {
       success: true, 
       message: '초대 처리가 완료되었습니다.',
       inviterName: inviterDoc.data().username || inviterDoc.data().firstName || '사용자',
-      inviteeReward: 500,
-      inviterReward: 1000
+      inviteeReward: 5,
+      inviterReward: 10
     };
   } catch (error) {
     console.error('초대 처리 오류:', error);

@@ -140,7 +140,7 @@ const CreateTask = ({ telegramUser }) => {
         </div>
         
         <div className="form-group">
-          <label className="form-label" style={{ display: 'block', color: '#a0a0a0', marginBottom: '4px' }}>보상 (MOPI)</label>
+          <label className="form-label" style={{ display: 'block', color: '#a0a0a0', marginBottom: '4px' }}>보상 (CGP)</label>
           <input
             type="number"
             name="reward"

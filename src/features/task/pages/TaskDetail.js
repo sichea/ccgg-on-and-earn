@@ -74,7 +74,7 @@ const TaskDetail = ({ isAdmin, telegramUser }) => {
         });
       }
       
-      alert(`태스크 참여 완료! ${task.reward} MOPI 획득!`);
+      alert(`태스크 참여 완료! ${task.reward} CGP 획득!`);
       // 태스크 정보 갱신
       const updatedTaskSnap = await getDoc(taskRef);
       setTask({
@@ -234,7 +234,7 @@ const TaskDetail = ({ isAdmin, telegramUser }) => {
           </div>
           
           <div className="form-group">
-            <label className="form-label" style={{ display: 'block', color: '#a0a0a0', marginBottom: '4px' }}>보상 (MOPI)</label>
+            <label className="form-label" style={{ display: 'block', color: '#a0a0a0', marginBottom: '4px' }}>보상 (CGP)</label>
             <input
               type="number"
               name="reward"
@@ -294,7 +294,7 @@ const TaskDetail = ({ isAdmin, telegramUser }) => {
           </div>
           
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div style={{ color: '#f9ca24', fontWeight: '500' }}>+{task.reward} MOPI</div>
+            <div style={{ color: '#f9ca24', fontWeight: '500' }}>+{task.reward} CGP</div>
           </div>
         </div>
         
