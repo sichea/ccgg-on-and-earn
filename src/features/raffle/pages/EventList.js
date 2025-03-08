@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, getDocs, query, orderBy, where, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../../../services/firebase';
 import './EventList.css';
 
@@ -12,42 +12,8 @@ const EventList = ({ telegramUser, isAdmin }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const eventsPerPage = 5; // 페이지당 이벤트 수
 
-  // 모든 이벤트를 먼저 가져오고, 클라이언트 측에서 필터링
-  useEffect(() => {
-    fetchAllEvents();
-  }, []);
-  
-  // 필터가 변경될 때 이벤트 필터링
-  useEffect(() => {
-    filterEvents();
-  }, [activeFilter, events]);
-
-  // 모든 이벤트 가져오기
-  const fetchAllEvents = async () => {
-    try {
-      setLoading(true);
-      
-      const eventsQuery = query(
-        collection(db, 'events'),
-        orderBy('createdAt', 'desc')
-      );
-      
-      const querySnapshot = await getDocs(eventsQuery);
-      const eventsList = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      
-      setEvents(eventsList);
-      setLoading(false);
-    } catch (error) {
-      console.error('이벤트를 불러오는 중 오류 발생:', error);
-      setLoading(false);
-    }
-  };
-  
-  // 이벤트 필터링 (클라이언트 측)
-  const filterEvents = () => {
+  // 이벤트 필터링 함수를 useCallback으로 감싸기
+  const filterEvents = useCallback(() => {
     const now = new Date();
     
     if (activeFilter === 'all') {
@@ -72,6 +38,40 @@ const EventList = ({ telegramUser, isAdmin }) => {
     
     // 필터 변경 시 첫 페이지로 리셋
     setCurrentPage(1);
+  }, [activeFilter, events]);
+
+  // 모든 이벤트를 먼저 가져오고, 클라이언트 측에서 필터링
+  useEffect(() => {
+    fetchAllEvents();
+  }, []);
+  
+  // 필터가 변경될 때 이벤트 필터링
+  useEffect(() => {
+    filterEvents();
+  }, [activeFilter, events, filterEvents]);
+
+  // 모든 이벤트 가져오기
+  const fetchAllEvents = async () => {
+    try {
+      setLoading(true);
+      
+      const eventsQuery = query(
+        collection(db, 'events'),
+        orderBy('createdAt', 'desc')
+      );
+      
+      const querySnapshot = await getDocs(eventsQuery);
+      const eventsList = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
+      setEvents(eventsList);
+      setLoading(false);
+    } catch (error) {
+      console.error('이벤트를 불러오는 중 오류 발생:', error);
+      setLoading(false);
+    }
   };
 
   // 현재 페이지의 이벤트만 가져오기
@@ -147,6 +147,9 @@ const EventList = ({ telegramUser, isAdmin }) => {
                   </p>
                   <div className="event-meta">
                     <span>참여자: {event.participants?.length || 0}명</span>
+                    {event.entryFee > 0 && (
+                      <span className="event-fee">참여비: {event.entryFee} CGP</span>
+                    )}
                     <span className={`event-status ${statusClass}`}>
                       {displayStatus}
                     </span>
@@ -154,6 +157,9 @@ const EventList = ({ telegramUser, isAdmin }) => {
                   <p className="event-deadline">
                     마감: {new Date(event.endDate.toDate()).toLocaleDateString()} {new Date(event.endDate.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                   </p>
+                  {event.totalPool > 0 && (
+                    <p className="event-pool">총 상금: {event.totalPool} CGP</p>
+                  )}
                 </Link>
               );
             })

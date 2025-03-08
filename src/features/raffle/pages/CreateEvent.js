@@ -11,6 +11,7 @@ const CreateEvent = ({ telegramUser }) => {
   const [description, setDescription] = useState('');
   const [endDate, setEndDate] = useState('');
   const [winnerCount, setWinnerCount] = useState(1);
+  const [entryFee, setEntryFee] = useState(0); // 추가: 참여 비용
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -30,6 +31,12 @@ const CreateEvent = ({ telegramUser }) => {
       return;
     }
 
+    // 참여 비용 유효성 검사
+    if (entryFee < 0) {
+      alert("참여 비용은 0 CGP 이상이어야 합니다.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -38,7 +45,8 @@ const CreateEvent = ({ telegramUser }) => {
         description, 
         endDate, 
         createdBy: telegramUser.id,
-        winnerCount 
+        winnerCount,
+        entryFee // 추가: 참여 비용
       });
       
       const selectedDate = new Date(endDate);
@@ -57,7 +65,9 @@ const CreateEvent = ({ telegramUser }) => {
         isActive: true,
         participants: [],
         winnerCount: Number(winnerCount),
-        winners: []
+        winners: [],
+        entryFee: Number(entryFee), // 추가: 참여 비용
+        totalPool: 0 // 추가: 총 모인 참여 비용
       });
       
       console.log('이벤트 생성 성공:', docRef.id);
@@ -120,6 +130,19 @@ const CreateEvent = ({ telegramUser }) => {
             onChange={(e) => setWinnerCount(e.target.value)}
             min={1}
             max={100}
+          />
+        </div>
+        
+        {/* 추가: 참여 비용 필드 */}
+        <div className="form-group">
+          <label htmlFor="entryFee">참여 비용 (CGP)</label>
+          <input
+            type="number"
+            id="entryFee"
+            value={entryFee}
+            onChange={(e) => setEntryFee(e.target.value)}
+            min={0}
+            placeholder="참여에 필요한 CGP (0 = 무료)"
           />
         </div>
         

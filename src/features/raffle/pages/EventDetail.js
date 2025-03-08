@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  doc, getDoc, updateDoc, arrayUnion, arrayRemove, deleteDoc,
-  onSnapshot, Timestamp, collection, addDoc 
+  doc, getDoc, updateDoc, arrayUnion, deleteDoc,
+  onSnapshot, Timestamp, collection, addDoc, writeBatch, increment
 } from 'firebase/firestore';
 import { db } from '../../../services/firebase';
+import { getUserDocument } from '../../../utils/userUtils';
 import './EventDetail.css';
 
 const EventDetail = ({ telegramUser, isAdmin }) => {
@@ -16,6 +17,8 @@ const EventDetail = ({ telegramUser, isAdmin }) => {
   const [comments, setComments] = useState([]);
   const [winners, setWinners] = useState([]);
   const [participating, setParticipating] = useState(false);
+  const [userPoints, setUserPoints] = useState(0);
+  const [processing, setProcessing] = useState(false);
 
   // 이벤트 삭제 함수
   const deleteEvent = async () => {
@@ -49,6 +52,7 @@ const EventDetail = ({ telegramUser, isAdmin }) => {
   const [editDescription, setEditDescription] = useState('');
   const [editEndDate, setEditEndDate] = useState('');
   const [editWinnerCount, setEditWinnerCount] = useState(1);
+  const [editEntryFee, setEditEntryFee] = useState(0); // 추가: 참여 비용 수정
 
   // 수정 모드 시작
   const startEditing = () => {
@@ -71,6 +75,7 @@ const EventDetail = ({ telegramUser, isAdmin }) => {
     
     setEditEndDate(`${year}-${month}-${day}T${hours}:${minutes}`);
     setEditWinnerCount(event.winnerCount || 1);
+    setEditEntryFee(event.entryFee || 0); // 추가: 참여 비용
     
     setIsEditing(true);
   };
@@ -89,6 +94,12 @@ const EventDetail = ({ telegramUser, isAdmin }) => {
       return;
     }
 
+    // 참여 비용이 음수인지 확인
+    if (editEntryFee < 0) {
+      alert("참여 비용은 0 CGP 이상이어야 합니다.");
+      return;
+    }
+
     try {
       const selectedDate = new Date(editEndDate);
       
@@ -99,6 +110,7 @@ const EventDetail = ({ telegramUser, isAdmin }) => {
         description: editDescription,
         endDate: Timestamp.fromDate(selectedDate),
         winnerCount: Number(editWinnerCount),
+        entryFee: Number(editEntryFee), // 추가: 참여 비용
         updatedAt: Timestamp.now() // 수정 시간 추가
       });
       
@@ -110,38 +122,25 @@ const EventDetail = ({ telegramUser, isAdmin }) => {
     }
   };
 
-  // 댓글 작성을 통해 자동으로 참여하도록 변경
-  const addParticipant = async (userId, username, firstName, lastName) => {
-    try {
-      const eventRef = doc(db, 'events', id);
-      
-      // 이미 참여 중인지 확인
-      const isAlreadyParticipating = event.participants?.some(p => p.id === userId);
-      
-      // 아직 참여하지 않았다면 참여자 목록에 추가
-      if (!isAlreadyParticipating) {
-        const participant = {
-          id: userId,
-          username: username || '',
-          firstName: firstName || '',
-          lastName: lastName || '',
-          participatedAt: Timestamp.now()
-        };
-        
-        await updateDoc(eventRef, {
-          participants: arrayUnion(participant)
-        });
-        
-        // 참여 상태 업데이트
-        if (userId === telegramUser?.id) {
-          setParticipating(true);
+  // 사용자 정보 및 포인트 불러오기 로직
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (telegramUser?.id) {
+        try {
+          const userData = await getUserDocument(telegramUser);
+          if (userData) {
+            setUserPoints(userData.points || 0);
+          }
+        } catch (error) {
+          console.error("사용자 데이터 불러오기 오류:", error);
         }
       }
-    } catch (error) {
-      console.error("참여자 추가 중 오류 발생:", error);
-    }
-  };
+    };
+    
+    fetchUserData();
+  }, [telegramUser]);
 
+  // 댓글 작성 시 참여 함수
   const addComment = async (text) => {
     if (!telegramUser) {
       alert("텔레그램을 통해 접속하셔야 댓글을 남길 수 있습니다.");
@@ -152,10 +151,51 @@ const EventDetail = ({ telegramUser, isAdmin }) => {
       alert("댓글 내용을 입력해주세요.");
       return;
     }
-
+    
+    // 참여 비용 확인
+    const entryFee = event.entryFee || 0;
+    
+    // 참여 비용이 있고, 사용자 포인트가 부족한 경우
+    if (entryFee > 0 && userPoints < entryFee) {
+      alert(`참여 비용 ${entryFee} CGP가 부족합니다. 현재 보유 CGP: ${userPoints}`);
+      return;
+    }
+    
+    // 이미 참여 중인지 확인
+    const isAlreadyParticipating = event.participants?.some(p => p.id === telegramUser.id);
+    
+    if (isAlreadyParticipating) {
+      // 이미 참여한 경우 댓글만 추가
+      try {
+        const commentsRef = collection(db, 'events', id, 'comments');
+        await addDoc(commentsRef, {
+          text,
+          userId: telegramUser.id,
+          username: telegramUser.username || '',
+          firstName: telegramUser.first_name || '',
+          lastName: telegramUser.last_name || '',
+          createdAt: Timestamp.now()
+        });
+        
+        setComment('');
+      } catch (error) {
+        console.error("댓글 추가 중 오류 발생:", error);
+        alert("댓글을 저장하는 중 오류가 발생했습니다.");
+      }
+      return;
+    }
+    
+    // 처음 참여하는 경우 비용 지불 및 참여 처리
+    setProcessing(true);
+    
     try {
+      // 배치 처리로 트랜잭션 구현
+      const batch = writeBatch(db);
+      
+      // 1. 댓글 추가
       const commentsRef = collection(db, 'events', id, 'comments');
-      await addDoc(commentsRef, {
+      const commentRef = doc(commentsRef);
+      batch.set(commentRef, {
         text,
         userId: telegramUser.id,
         username: telegramUser.username || '',
@@ -164,18 +204,53 @@ const EventDetail = ({ telegramUser, isAdmin }) => {
         createdAt: Timestamp.now()
       });
       
-      // 댓글 작성시 자동으로 참여자 목록에 추가
-      await addParticipant(
-        telegramUser.id, 
-        telegramUser.username, 
-        telegramUser.first_name, 
-        telegramUser.last_name
-      );
+      // 2. 참여자 추가
+      const eventRef = doc(db, 'events', id);
+      const participant = {
+        id: telegramUser.id,
+        username: telegramUser.username || '',
+        firstName: telegramUser.first_name || '',
+        lastName: telegramUser.last_name || '',
+        participatedAt: Timestamp.now(),
+        paidFee: entryFee
+      };
       
+      batch.update(eventRef, {
+        participants: arrayUnion(participant),
+        totalPool: increment(entryFee) // 총 상금 풀 증가
+      });
+      
+      // 3. 사용자 포인트 차감 (참여 비용이 있는 경우)
+      if (entryFee > 0) {
+        const userRef = doc(db, 'users', telegramUser.id.toString());
+        batch.update(userRef, {
+          points: increment(-entryFee),
+          updatedAt: Timestamp.now()
+        });
+      }
+      
+      // 배치 실행
+      await batch.commit();
+      
+      // 상태 업데이트
+      if (entryFee > 0) {
+        setUserPoints(prev => prev - entryFee);
+      }
+      
+      setParticipating(true);
       setComment('');
+      
+      // 화면에 보이는 참여자 수 업데이트를 위해 이벤트 다시 불러오기
+      const updatedEventDoc = await getDoc(eventRef);
+      if (updatedEventDoc.exists()) {
+        setEvent(updatedEventDoc.data());
+      }
+      
     } catch (error) {
-      console.error("댓글 추가 중 오류 발생:", error);
-      alert("댓글을 저장하는 중 오류가 발생했습니다.");
+      console.error("이벤트 참여 처리 오류:", error);
+      alert("이벤트 참여 중 오류가 발생했습니다.");
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -244,29 +319,82 @@ const EventDetail = ({ telegramUser, isAdmin }) => {
         }
       }
       
-      setWinners(selectedWinners);
+      // 총 상금 풀 계산
+      const totalPool = event.totalPool || 0;
       
-      // Firestore 업데이트
+      // 당첨자 별 상금 계산 (동일하게 나눔)
+      const prizePerWinner = selectedWinners.length > 0 
+        ? Math.floor(totalPool / selectedWinners.length) 
+        : 0;
+      
+      // 배치 처리
+      const batch = writeBatch(db);
+      
+      // 1. 이벤트 상태 업데이트
       const eventRef = doc(db, 'events', id);
-      await updateDoc(eventRef, {
-        winners: selectedWinners,
+      
+      // 당첨자 정보에 상금 정보 추가
+      const winnersWithPrize = selectedWinners.map(winner => ({
+        ...winner,
+        prize: prizePerWinner
+      }));
+      
+      batch.update(eventRef, {
+        winners: winnersWithPrize,
         isActive: false,
         drawDate: Timestamp.now()
       });
       
-      alert("댓글 작성자 중에서 당첨자 추첨이 완료되었습니다!");
+      // 2. 당첨자들에게 상금 지급
+      if (prizePerWinner > 0) {
+        for (const winner of selectedWinners) {
+          const userRef = doc(db, 'users', winner.id.toString());
+          
+          // 사용자 문서 확인
+          const userDoc = await getDoc(userRef);
+          
+          if (userDoc.exists()) {
+            // 상금 지급
+            batch.update(userRef, {
+              points: increment(prizePerWinner),
+              updatedAt: Timestamp.now(),
+              rewardHistory: arrayUnion({
+                type: 'raffle_win',
+                amount: prizePerWinner,
+                date: new Date().toISOString(),
+                description: `래플 이벤트 '${event.title}' 당첨 상금`
+              })
+            });
+          }
+        }
+      }
+      
+      // 배치 실행
+      await batch.commit();
+      
+      setWinners(winnersWithPrize);
+      
+      // 상금이 있는 경우와 없는 경우 메시지 분리
+      if (totalPool > 0) {
+        alert(`당첨자 추첨이 완료되었습니다!\n각 당첨자에게 ${prizePerWinner} CGP의 상금이 지급되었습니다.`);
+      } else {
+        alert("당첨자 추첨이 완료되었습니다!");
+      }
+      
     } catch (error) {
       console.error("추첨 중 오류 발생:", error);
       alert("추첨 중 오류가 발생했습니다.");
     }
   };
 
-  // 이벤트 마감 여부 확인 함수
-  const checkEventStatus = async () => {
+  // 이벤트 마감 여부 확인 함수 (useCallback으로 래핑)
+  const checkEventStatus = useCallback(async () => {
     if (!event || !event.isActive) return;
     
     const now = new Date();
-    const endDate = event.endDate.toDate();
+    const endDate = event.endDate?.toDate();
+    
+    if (!endDate) return;
     
     // 현재 시간이 마감 시간을 지났는지 확인
     if (now > endDate && event.isActive) {
@@ -286,7 +414,7 @@ const EventDetail = ({ telegramUser, isAdmin }) => {
         console.error("이벤트 상태 업데이트 중 오류 발생:", error);
       }
     }
-  };
+  }, [event, id]);
 
   useEffect(() => {
     // 이벤트 데이터 가져오기
@@ -336,7 +464,7 @@ const EventDetail = ({ telegramUser, isAdmin }) => {
     fetchEvent();
   }, [id, telegramUser]);
   
-  // 이벤트 데이터가 로드된 후 상태 확인
+  // 이벤트 데이터가 로드된 후 상태 확인 (useEffect 의존성 배열 수정)
   useEffect(() => {
     if (event) {
       checkEventStatus();
@@ -345,7 +473,7 @@ const EventDetail = ({ telegramUser, isAdmin }) => {
       const intervalId = setInterval(checkEventStatus, 60000);
       return () => clearInterval(intervalId);
     }
-  }, [event]);
+  }, [event, checkEventStatus]); // checkEventStatus 의존성 추가
 
   if (loading) {
     return <div className="loading">이벤트 정보를 불러오는 중...</div>;
@@ -421,6 +549,17 @@ const EventDetail = ({ telegramUser, isAdmin }) => {
               />
             </div>
             
+            <div className="form-group">
+              <label htmlFor="editEntryFee">참여 비용 (CGP)</label>
+              <input
+                type="number"
+                id="editEntryFee"
+                value={editEntryFee}
+                onChange={(e) => setEditEntryFee(e.target.value)}
+                min={0}
+              />
+            </div>
+            
             <div className="form-actions">
               <button type="button" className="cancel-btn" onClick={cancelEditing}>
                 취소
@@ -440,12 +579,18 @@ const EventDetail = ({ telegramUser, isAdmin }) => {
             <p className="event-description">{event.description}</p>
             <div className="event-meta">
               <p>참여자: {event.participants?.length || 0}명</p>
+              {event.entryFee > 0 && (
+                <p className="event-fee">참여 비용: {event.entryFee} CGP</p>
+              )}
               <p className={`event-status ${event.isActive ? 'active' : 'ended'}`}>
                 상태: {event.isActive ? '진행중' : '종료됨'}
               </p>
               <p>마감일: <br/> {new Date(event.endDate.toDate()).toLocaleDateString()} {new Date(event.endDate.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
               {event.drawDate && (
                 <p>추첨일: <br/> {new Date(event.drawDate.toDate()).toLocaleDateString()} {new Date(event.drawDate.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+              )}
+              {event.totalPool > 0 && (
+                <p className="event-pool">총 상금: {event.totalPool} CGP</p>
               )}
             </div>
             
@@ -469,10 +614,25 @@ const EventDetail = ({ telegramUser, isAdmin }) => {
       {winners.length > 0 && (
         <div className="winners-section">
           <h2>🎉 당첨자 발표 🎉</h2>
+          
+          {event.totalPool > 0 && (
+            <p className="winners-prize-info">
+              총 상금: {event.totalPool} CGP
+              {winners.length > 0 && (
+                <span> (1인당 {Math.floor(event.totalPool / winners.length)} CGP)</span>
+              )}
+            </p>
+          )}
+          
           <ul className="winners-list">
             {winners.map((winner, index) => (
               <li key={index} className="winner-item">
-                {winner.username ? `@${winner.username}` : `${winner.firstName} ${winner.lastName}`}
+                {winner.username 
+                  ? `@${winner.username}` 
+                  : `${winner.firstName} ${winner.lastName}`}
+                {winner.prize > 0 && (
+                  <span className="winner-prize"> +{winner.prize} CGP</span>
+                )}
               </li>
             ))}
           </ul>
@@ -484,6 +644,7 @@ const EventDetail = ({ telegramUser, isAdmin }) => {
         <h2>댓글 작성하기</h2>
         <p className="comment-info">
           댓글을 작성하시면 자동으로 이벤트에 참여됩니다. 
+          {event.entryFee > 0 && !participating && ` 참여 비용은 ${event.entryFee} CGP입니다.`}
           {!event.isActive && ' 이벤트가 종료되어 더 이상 참여할 수 없습니다.'}
         </p>
         
@@ -493,11 +654,22 @@ const EventDetail = ({ telegramUser, isAdmin }) => {
               type="text"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder={event.isActive ? "댓글을 입력하세요..." : "이벤트가 종료되었습니다"}
-              disabled={!event.isActive}
+              placeholder={event.isActive 
+                ? (participating 
+                    ? "댓글을 입력하세요..." 
+                    : `${event.entryFee > 0 ? `${event.entryFee} CGP를 지불하고 ` : ''}참여하려면 댓글을 입력하세요...`)
+                : "이벤트가 종료되었습니다"}
+              disabled={!event.isActive || processing}
             />
-            <button type="submit" disabled={!event.isActive}>
-              참여하기
+            <button 
+              type="submit" 
+              disabled={!event.isActive || processing}
+            >
+              {processing 
+                ? "처리 중..." 
+                : participating 
+                  ? "댓글 작성" 
+                  : "참여하기"}
             </button>
           </form>
         )}
