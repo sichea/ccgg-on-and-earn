@@ -510,3 +510,100 @@
   text-align: center;
   color: #a0a0a0;
 }
+
+/* 페이지네이션 컨테이너 */
+.evm-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px 0;
+  border-top: 1px solid #393f4a;
+  margin-top: 16px;
+}
+
+/* 페이지 버튼 */
+.evm-pagination-button {
+  background-color: #232d42;
+  color: white;
+  border: 1px solid #393f4a;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  margin: 0 8px;
+}
+
+.evm-pagination-button:hover {
+  background-color: #2a3654;
+}
+
+.evm-pagination-button:disabled {
+  background-color: #1c2333;
+  color: #4a515e;
+  cursor: not-allowed;
+}
+
+/* 페이지 정보 */
+.evm-pagination-info {
+  margin: 0 16px;
+  color: #a0a0a0;
+  font-size: 14px;
+}
+
+/* 옵션: 페이지당 항목 수 선택 드롭다운 */
+.evm-page-size-select {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.evm-page-size-select label {
+  color: #a0a0a0;
+  font-size: 14px;
+  margin-right: 8px;
+}
+
+.evm-page-size-select select {
+  background-color: #232d42;
+  color: white;
+  border: 1px solid #393f4a;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 14px;
+}
+
+/* 페이지 번호 선택기 (대용량 데이터일 경우 옵션) */
+.evm-page-numbers {
+  display: flex;
+  justify-content: center;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.evm-page-number {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 32px;
+  height: 32px;
+  margin: 0 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #a0a0a0;
+}
+
+.evm-page-number.active {
+  background-color: #40a7e3;
+  color: white;
+}
+
+.evm-page-number:hover:not(.active) {
+  background-color: #2a3654;
+}

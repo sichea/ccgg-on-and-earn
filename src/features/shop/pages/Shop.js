@@ -36,8 +36,16 @@ const Shop = ({ telegramUser, isAdmin, walletTab = false }) => {
   
   // 관리자용 사용자 EVM 주소 관련 상태
   const [usersWithEvm, setUsersWithEvm] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [showEvmAddresses, setShowEvmAddresses] = useState(false);
+  
+  // 페이지네이션 관련 상태
+  const [currentPage, setCurrentPage] = useState(1);
+  const [usersPerPage] = useState(10);
+  
+  // 검색 관련 상태
+  const [searchTerm, setSearchTerm] = useState('');
   
   const userId = telegramUser?.id?.toString() || '';
   
@@ -148,6 +156,33 @@ const Shop = ({ telegramUser, isAdmin, walletTab = false }) => {
     
     fetchEvmAddress();
   }, [userId]);
+  
+  // 사용자 필터링 (검색어 변경 시)
+  useEffect(() => {
+    if (!usersWithEvm.length) return;
+    
+    // 검색어가 있는 경우 필터링
+    if (searchTerm.trim()) {
+      const filtered = usersWithEvm.filter(user => {
+        const username = user.username || '';
+        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+        const telegramId = user.telegramId || '';
+        
+        // 검색어를 소문자로 변환하여 비교
+        const term = searchTerm.toLowerCase();
+        return username.toLowerCase().includes(term) || 
+               fullName.toLowerCase().includes(term) || 
+               telegramId.toLowerCase().includes(term);
+      });
+      setFilteredUsers(filtered);
+    } else {
+      // 검색어가 없는 경우 전체 목록 표시
+      setFilteredUsers(usersWithEvm);
+    }
+    
+    // 페이지 초기화
+    setCurrentPage(1);
+  }, [searchTerm, usersWithEvm]);
   
   // 상품 선택 처리
   const handleProductSelect = (product) => {
@@ -404,6 +439,7 @@ const Shop = ({ telegramUser, isAdmin, walletTab = false }) => {
       });
       
       setUsersWithEvm(usersData);
+      setFilteredUsers(usersData);
       
       if (usersData.length > 0) {
         setShowEvmAddresses(true);
@@ -413,6 +449,33 @@ const Shop = ({ telegramUser, isAdmin, walletTab = false }) => {
     } finally {
       setLoadingUsers(false);
     }
+  };
+  
+  // 페이지 변경 핸들러
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+  
+  // 현재 페이지의 사용자 가져오기
+  const getCurrentUsers = () => {
+    const indexOfLastUser = currentPage * usersPerPage;
+    const indexOfFirstUser = indexOfLastUser - usersPerPage;
+    return filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  };
+  
+  // 검색어 변경 핸들러
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+  
+  // 검색 submit 처리
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+  };
+  
+  // 검색 초기화 핸들러
+  const handleClearSearch = () => {
+    setSearchTerm('');
   };
   
   // EVM 주소 복사 함수
@@ -671,348 +734,559 @@ const Shop = ({ telegramUser, isAdmin, walletTab = false }) => {
       });
     };
     
-    return (
-      <div>
-        {/* 기존 상품 등록 폼 */}
-        <div className="admin-form-container">
-          <h3 className="admin-form-title">
-            {editMode ? '상품 수정' : '새 상품 등록'}
-          </h3>
-          
-          <form onSubmit={editMode ? handleUpdateProduct : onAddProduct}>
-            <div className="form-group">
-              <label className="form-label">상품명</label>
-              <input
-                type="text"
-                name="name"
-                value={newProduct.name}
-                onChange={onInputChange}
-                className="form-input"
-                required
-              />
-            </div>
-            
-            <div className="form-group">
-              <label className="form-label">상품 설명</label>
-              <textarea
-                name="description"
-                value={newProduct.description}
-                onChange={onInputChange}
-                className="form-textarea"
-                required
-              ></textarea>
-            </div>
-            
-            <div className="form-group">
-              <label className="form-label">가격 (CGP)</label>
-              <input
-                type="number"
-                name="price"
-                value={newProduct.price}
-                onChange={onInputChange}
-                className="form-input"
-                min="0"
-                required
-              />
-            </div>
-            
-            <div className="form-group">
-              <label className="form-label">이미지 URL</label>
-              <input
-                type="url"
-                name="imageUrl"
-                value={newProduct.imageUrl}
-                onChange={onInputChange}
-                className="form-input"
-                placeholder="https://example.com/image.jpg"
-              />
-            </div>
-            
-            <div className="form-group">
-              <label className="form-label">재고 수량</label>
-              <input
-                type="number"
-                name="stock"
-                value={newProduct.stock}
-                onChange={onInputChange}
-                className="form-input"
-                min="0"
-                required
-              />
-            </div>
-            
-            <div className="form-group">
-              <label className="form-label">판매 가능 여부</label>
-              <select
-                name="isAvailable"
-                value={newProduct.isAvailable}
-                onChange={(e) => onInputChange({
-                  target: { name: 'isAvailable', value: e.target.value === 'true' }
-                })}
-                className="form-input"
-              >
-                <option value="true">판매 가능</option>
-                <option value="false">판매 중지</option>
-              </select>
-            </div>
-            
-            {editMode ? (
-              <div className="form-actions" style={{ display: 'flex', gap: '10px' }}>
-                <button 
-                  type="button" 
-                  onClick={cancelEdit}
-                  className="admin-cancel-button"
-                  style={{ flex: 1, backgroundColor: '#4a525e' }}
-                >
-                  취소
-                </button>
-                <button 
-                  type="submit" 
-                  className="admin-submit-button"
-                  disabled={loadingAdmin}
-                  style={{ flex: 1 }}
-                >
-                  {loadingAdmin ? '처리 중...' : '수정하기'}
-                </button>
-              </div>
-            ) : (
-              <button 
-                type="submit" 
-                className="admin-submit-button"
-                disabled={loadingAdmin}
-              >
-                {loadingAdmin ? '처리 중...' : '상품 등록'}
-              </button>
-            )}
-          </form>
+// 사용자 목록의 총 페이지 수 계산
+const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+    
+return (
+  <div>
+    {/* 기존 상품 등록 폼 */}
+    <div className="admin-form-container">
+      <h3 className="admin-form-title">
+        {editMode ? '상품 수정' : '새 상품 등록'}
+      </h3>
+      
+      <form onSubmit={editMode ? handleUpdateProduct : onAddProduct}>
+        <div className="form-group">
+          <label className="form-label">상품명</label>
+          <input
+            type="text"
+            name="name"
+            value={newProduct.name}
+            onChange={onInputChange}
+            className="form-input"
+            required
+          />
         </div>
         
-        {/* EVM 주소 관리 섹션 추가 */}
-        <div className="admin-form-container" style={{ marginTop: '24px' }}>
-          <h3 className="admin-form-title">사용자 EVM 주소 관리</h3>
-          
-          <div className="admin-evm-actions">
+        <div className="form-group">
+          <label className="form-label">상품 설명</label>
+          <textarea
+            name="description"
+            value={newProduct.description}
+            onChange={onInputChange}
+            className="form-textarea"
+            required
+          ></textarea>
+        </div>
+        
+        <div className="form-group">
+          <label className="form-label">가격 (CGP)</label>
+          <input
+            type="number"
+            name="price"
+            value={newProduct.price}
+            onChange={onInputChange}
+            className="form-input"
+            min="0"
+            required
+          />
+        </div>
+        
+        <div className="form-group">
+          <label className="form-label">이미지 URL</label>
+          <input
+            type="url"
+            name="imageUrl"
+            value={newProduct.imageUrl}
+            onChange={onInputChange}
+            className="form-input"
+            placeholder="https://example.com/image.jpg"
+          />
+        </div>
+        
+        <div className="form-group">
+          <label className="form-label">재고 수량</label>
+          <input
+            type="number"
+            name="stock"
+            value={newProduct.stock}
+            onChange={onInputChange}
+            className="form-input"
+            min="0"
+            required
+          />
+        </div>
+        
+        <div className="form-group">
+          <label className="form-label">판매 가능 여부</label>
+          <select
+            name="isAvailable"
+            value={newProduct.isAvailable}
+            onChange={(e) => onInputChange({
+              target: { name: 'isAvailable', value: e.target.value === 'true' }
+            })}
+            className="form-input"
+          >
+            <option value="true">판매 가능</option>
+            <option value="false">판매 중지</option>
+          </select>
+        </div>
+        
+        {editMode ? (
+          <div className="form-actions" style={{ display: 'flex', gap: '10px' }}>
             <button 
-              onClick={fetchUsersWithEvmAddress}
-              disabled={loadingUsers}
-              className="admin-submit-button"
-              style={{ marginBottom: '16px' }}
+              type="button" 
+              onClick={cancelEdit}
+              className="admin-cancel-button"
+              style={{ flex: 1, backgroundColor: '#4a525e' }}
             >
-              {loadingUsers ? "불러오는 중..." : "EVM 주소 불러오기"}
+              취소
             </button>
-            
-            {usersWithEvm.length > 0 && (
-              <button 
-                onClick={() => setShowEvmAddresses(!showEvmAddresses)}
-                className="admin-submit-button"
-                style={{ marginLeft: '8px', marginBottom: '16px', backgroundColor: '#4a515e' }}
-              >
-                {showEvmAddresses ? "목록 숨기기" : "목록 표시하기"}
-              </button>
-            )}
-          </div>
-          
-          {showEvmAddresses && (
-            <div className="evm-users-list">
-              {usersWithEvm.length > 0 ? (
-                <>
-                  <div className="evm-users-header">
-                    <span className="evm-header-cell" style={{flex: 3}}>사용자</span>
-                    <span className="evm-header-cell" style={{flex: 5}}>EVM 주소</span>
-                    <span className="evm-header-cell" style={{flex: 2}}>업데이트 일시</span>
-                    <span className="evm-header-cell" style={{flex: 1}}>CGP</span>
-                    <span className="evm-header-cell" style={{flex: 1}}>액션</span>
-                  </div>
-                  
-                  {usersWithEvm.map(user => (
-                    <div key={user.id} className="evm-user-item">
-                      <span className="evm-user-name" style={{flex: 3}}>
-                        {user.username 
-                          ? `@${user.username}` 
-                          : (user.firstName 
-                              ? `${user.firstName} ${user.lastName || ''}`.trim() 
-                              : user.telegramId)}
-                      </span>
-                      <span className="evm-user-address" style={{flex: 5}}>
-                        {user.evmAddress}
-                      </span>
-                      <span className="evm-update-date" style={{flex: 2}}>
-                        {user.evmAddressUpdatedAt 
-                          ? new Date(user.evmAddressUpdatedAt.toDate()).toLocaleString() 
-                          : '-'}
-                      </span>
-                      <span className="evm-user-points" style={{flex: 1}}>
-                        {user.points}
-                      </span>
-                      <span className="evm-user-actions" style={{flex: 1}}>
-                        <button 
-                          onClick={() => copyToClipboard(user.evmAddress)}
-                          className="evm-copy-btn"
-                          title="주소 복사"
-                        >
-                          📋
-                        </button>
-                      </span>
-                    </div>
-                  ))}
-                </>
-              ) : (
-                <p className="no-evm-users">EVM 주소를 등록한 사용자가 없습니다.</p>
-              )}
-            </div>
-          )}
-        </div>
-        
-        <h2 className="purchase-history-title">등록된 상품 관리</h2>
-        {products.length > 0 ? (
-          <div className="purchase-history">
-            {products.map(product => (
-              <div key={product.id} className="purchase-item">
-                <div className="purchase-item-header">
-                  <span className="purchase-product-name">{product.name}</span>
-                  <div>
-                    <button 
-                      onClick={() => handleEditProduct(product)}
-                      style={{ marginRight: '8px', background: 'none', border: 'none', color: '#40a7e3', cursor: 'pointer' }}
-                    >
-                      ✏️
-                    </button>
-                    <button 
-                      onClick={() => onDeleteProduct(product.id)}
-                      style={{ background: 'none', border: 'none', color: '#e53935', cursor: 'pointer' }}
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </div>
-                <div className="purchase-price">
-                  <span className="product-price-icon">🪙</span>
-                  {product.price} CGP
-                </div>
-                <div style={{ marginTop: '8px', fontSize: '12px', color: '#a0a0a0' }}>
-                  재고: {product.stock}개 / 상태: {product.isAvailable ? '판매 중' : '판매 중지'}
-                </div>
-              </div>
-            ))}
+            <button 
+              type="submit" 
+              className="admin-submit-button"
+              disabled={loadingAdmin}
+              style={{ flex: 1 }}
+            >
+              {loadingAdmin ? '처리 중...' : '수정하기'}
+            </button>
           </div>
         ) : (
-          <div className="no-purchases">
-            <p>등록된 상품이 없습니다.</p>
-          </div>
-        )}
-      </div>
-    );
-  };
-  
-  if (loading) {
-    return <div className="shop-loading">로딩 중...</div>;
-  }
-  
-  return (
-    <div className="shop-container">
-      <h1 className="shop-title">CCGG SHOP</h1>
-      
-      {/* 탭 메뉴 */}
-      <div className="shop-tabs">
-        <button 
-          className={`shop-tab ${activeTab === 'shop' ? 'active' : ''}`}
-          onClick={() => setActiveTab('shop')}
-        >
-          상점
-        </button>
-        <button 
-          className={`shop-tab ${activeTab === 'wallet' ? 'active' : ''}`}
-          onClick={() => setActiveTab('wallet')}
-        >
-          내 지갑
-        </button>
-        {isAdmin && (
           <button 
-            className={`shop-tab ${activeTab === 'admin' ? 'active' : ''}`}
-            onClick={() => setActiveTab('admin')}
+            type="submit" 
+            className="admin-submit-button"
+            disabled={loadingAdmin}
           >
-            관리자
+            {loadingAdmin ? '처리 중...' : '상품 등록'}
+          </button>
+        )}
+      </form>
+    </div>
+    
+    {/* EVM 주소 관리 섹션 추가 */}
+    <div className="admin-form-container" style={{ marginTop: '24px' }}>
+      <h3 className="admin-form-title">사용자 EVM 주소 관리</h3>
+      
+      <div className="admin-evm-actions">
+        <button 
+          onClick={fetchUsersWithEvmAddress}
+          disabled={loadingUsers}
+          className="admin-submit-button"
+          style={{ marginBottom: '16px' }}
+        >
+          {loadingUsers ? "불러오는 중..." : "EVM 주소 불러오기"}
+        </button>
+        
+        {usersWithEvm.length > 0 && (
+          <button 
+            onClick={() => setShowEvmAddresses(!showEvmAddresses)}
+            className="admin-submit-button"
+            style={{ marginLeft: '8px', marginBottom: '16px', backgroundColor: '#4a515e' }}
+          >
+            {showEvmAddresses ? "목록 숨기기" : "목록 표시하기"}
           </button>
         )}
       </div>
       
-      {/* 선택된 탭 내용 */}
-      {activeTab === 'shop' && (
-        <ShopTab 
-          products={products} 
-          userPoints={userPoints}
-          onProductSelect={handleProductSelect}
-        />
-      )}
-      
-      {activeTab === 'wallet' && (
-        <WalletTab 
-          userPoints={userPoints}
-          purchases={purchases}
-        />
-      )}
-      
-      {activeTab === 'admin' && isAdmin && (
-        <AdminTab 
-          newProduct={newProduct}
-          onInputChange={handleInputChange}
-          onAddProduct={handleAddProduct}
-          onDeleteProduct={handleDeleteProduct}
-          products={products}
-          fetchProducts={fetchProducts}
-        />
-      )}
-      
-      {/* 상품 상세 모달 */}
-      {selectedProduct && (
-        <div className="product-modal-overlay" onClick={closeModal}>
-          <div className="product-modal" onClick={e => e.stopPropagation()}>
-            <div className="product-modal-header">
-              <div className="product-modal-title">{selectedProduct.name}</div>
-              <button className="product-modal-close" onClick={closeModal}>&times;</button>
-            </div>
-            
-            <div className="product-modal-body">
-              {selectedProduct.imageUrl && (
-                <img 
-                  src={selectedProduct.imageUrl} 
-                  alt={selectedProduct.name} 
-                  className="product-modal-img"
-                />
-              )}
-              
-              <div className="product-modal-price">
-                <span className="product-price-icon">🪙</span>
-                {selectedProduct.price} CGP
-              </div>
-              
-              <p className="product-modal-desc">{selectedProduct.description}</p>
-              
-              <p className="product-modal-stock">
-                재고: {selectedProduct.stock > 0 ? `${selectedProduct.stock}개 남음` : '품절'}
-              </p>
-              
-              <div className="product-modal-actions">
+      {showEvmAddresses && (
+        <div>
+          {/* 사용자 검색 폼 */}
+          <div className="evm-search-container" style={{ marginBottom: '16px' }}>
+            <form onSubmit={handleSearchSubmit} className="evm-search-form" style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                placeholder="사용자명 또는 ID로 검색"
+                style={{ 
+                  flex: 1, 
+                  padding: '10px', 
+                  borderRadius: '8px', 
+                  backgroundColor: '#1c2333', 
+                  border: '1px solid #393f4a',
+                  color: 'white' 
+                }}
+              />
+              <button 
+                type="submit" 
+                style={{
+                  backgroundColor: '#40a7e3',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '0 16px'
+                }}
+              >
+                검색
+              </button>
+              {searchTerm && (
                 <button 
-                  className="product-modal-buy"
-                  onClick={() => handlePurchase(selectedProduct)}
-                  disabled={isPurchasing || userPoints < selectedProduct.price || selectedProduct.stock <= 0}
+                  type="button" 
+                  onClick={handleClearSearch}
+                  style={{
+                    backgroundColor: 'transparent',
+                    color: '#a0a0a0',
+                    border: 'none',
+                    fontSize: '20px',
+                    cursor: 'pointer'
+                  }}
                 >
-                  {isPurchasing 
-                    ? '처리 중...' 
-                    : userPoints < selectedProduct.price 
-                      ? 'CGP 부족' 
-                      : selectedProduct.stock <= 0 
-                        ? '품절' 
-                        : '구매하기'}
+                  ×
                 </button>
-              </div>
+              )}
+            </form>
+            
+            <div style={{ marginTop: '8px', fontSize: '14px', color: '#a0a0a0' }}>
+              검색 결과: {filteredUsers.length}명 {searchTerm && `(검색어: "${searchTerm}")`}
             </div>
+          </div>
+          
+          <div style={{ 
+            backgroundColor: '#1c2333',
+            border: '1px solid #393f4a',
+            borderRadius: '8px',
+            overflow: 'hidden'
+          }}>
+            {filteredUsers.length > 0 ? (
+              <>
+                <div style={{ 
+                  display: 'flex', 
+                  padding: '12px', 
+                  backgroundColor: '#2a3654',
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  color: '#a0a0a0'
+                }}>
+                  <span style={{flex: 3, padding: '0 8px'}}>사용자</span>
+                  <span style={{flex: 5, padding: '0 8px'}}>EVM 주소</span>
+                  <span style={{flex: 2, padding: '0 8px'}}>업데이트 일시</span>
+                  <span style={{flex: 1, padding: '0 8px', textAlign: 'center'}}>CGP</span>
+                  <span style={{flex: 1, padding: '0 8px', textAlign: 'center'}}>액션</span>
+                </div>
+                
+                {getCurrentUsers().map(user => (
+                  <div key={user.id} style={{ 
+                    display: 'flex',
+                    padding: '12px',
+                    borderBottom: '1px solid #393f4a',
+                    alignItems: 'center',
+                    fontSize: '14px'
+                  }}>
+                    <span style={{flex: 3, padding: '0 8px'}}>
+                      {user.username 
+                        ? `@${user.username}` 
+                        : (user.firstName 
+                            ? `${user.firstName} ${user.lastName || ''}`.trim() 
+                            : user.telegramId)}
+                    </span>
+                    <span style={{
+                      flex: 5, 
+                      padding: '0 8px',
+                      fontFamily: 'monospace',
+                      wordBreak: 'break-all'
+                    }}>
+                      {user.evmAddress}
+                    </span>
+                    <span style={{flex: 2, padding: '0 8px'}}>
+                      {user.evmAddressUpdatedAt 
+                        ? new Date(user.evmAddressUpdatedAt.toDate()).toLocaleString() 
+                        : '-'}
+                    </span>
+                    <span style={{flex: 1, padding: '0 8px', textAlign: 'center'}}>
+                      {user.points}
+                    </span>
+                    <span style={{flex: 1, padding: '0 8px', textAlign: 'center'}}>
+                      <button 
+                        onClick={() => copyToClipboard(user.evmAddress)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#40a7e3',
+                          cursor: 'pointer',
+                          fontSize: '16px',
+                          padding: '4px'
+                        }}
+                        title="주소 복사"
+                      >
+                        📋
+                      </button>
+                    </span>
+                  </div>
+                ))}
+                
+                {/* 페이지네이션 UI */}
+                {totalPages > 1 && (
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    padding: '16px',
+                    gap: '8px'
+                  }}>
+                    <button 
+                      onClick={() => handlePageChange(1)} 
+                      disabled={currentPage === 1}
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        backgroundColor: '#232d42',
+                        color: 'white',
+                        border: '1px solid #393f4a',
+                        borderRadius: '4px',
+                        cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                        opacity: currentPage === 1 ? 0.5 : 1
+                      }}
+                    >
+                      &#171;
+                    </button>
+                    
+                    <button 
+                      onClick={() => handlePageChange(currentPage - 1)} 
+                      disabled={currentPage === 1}
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        backgroundColor: '#232d42',
+                        color: 'white',
+                        border: '1px solid #393f4a',
+                        borderRadius: '4px',
+                        cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                        opacity: currentPage === 1 ? 0.5 : 1
+                      }}
+                    >
+                      &#8249;
+                    </button>
+                    
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(num => Math.abs(num - currentPage) < 3 || num === 1 || num === totalPages)
+                      .map((number, index, array) => (
+                        <React.Fragment key={number}>
+                          {index > 0 && array[index - 1] !== number - 1 && (
+                            <span style={{ alignSelf: 'center', color: '#a0a0a0' }}>...</span>
+                          )}
+                          <button
+                            onClick={() => handlePageChange(number)}
+                            style={{
+                              width: '36px',
+                              height: '36px',
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              backgroundColor: currentPage === number ? '#40a7e3' : '#232d42',
+                              color: 'white',
+                              border: '1px solid #393f4a',
+                              borderRadius: '4px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {number}
+                          </button>
+                        </React.Fragment>
+                      ))}
+                    
+                    <button 
+                      onClick={() => handlePageChange(currentPage + 1)} 
+                      disabled={currentPage === totalPages}
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        backgroundColor: '#232d42',
+                        color: 'white',
+                        border: '1px solid #393f4a',
+                        borderRadius: '4px',
+                        cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                        opacity: currentPage === totalPages ? 0.5 : 1
+                      }}
+                    >
+                      &#8250;
+                    </button>
+                    
+                    <button 
+                      onClick={() => handlePageChange(totalPages)} 
+                      disabled={currentPage === totalPages}
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        backgroundColor: '#232d42',
+                        color: 'white',
+                        border: '1px solid #393f4a',
+                        borderRadius: '4px',
+                        cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                        opacity: currentPage === totalPages ? 0.5 : 1
+                      }}
+                    >
+                      &#187;
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <p style={{ 
+                padding: '20px', 
+                textAlign: 'center', 
+                color: '#a0a0a0' 
+              }}>
+                {searchTerm 
+                  ? `"${searchTerm}" 검색 결과가 없습니다.` 
+                  : 'EVM 주소를 등록한 사용자가 없습니다.'}
+              </p>
+            )}
           </div>
         </div>
       )}
     </div>
-  );
+    
+    <h2 className="purchase-history-title">등록된 상품 관리</h2>
+    {products.length > 0 ? (
+      <div className="purchase-history">
+        {products.map(product => (
+          <div key={product.id} className="purchase-item">
+            <div className="purchase-item-header">
+              <span className="purchase-product-name">{product.name}</span>
+              <div>
+                <button 
+                  onClick={() => handleEditProduct(product)}
+                  style={{ marginRight: '8px', background: 'none', border: 'none', color: '#40a7e3', cursor: 'pointer' }}
+                >
+                  ✏️
+                </button>
+                <button 
+                  onClick={() => onDeleteProduct(product.id)}
+                  style={{ background: 'none', border: 'none', color: '#e53935', cursor: 'pointer' }}
+                >
+                  🗑️
+                </button>
+              </div>
+            </div>
+            <div className="purchase-price">
+              <span className="product-price-icon">🪙</span>
+              {product.price} CGP
+            </div>
+            <div style={{ marginTop: '8px', fontSize: '12px', color: '#a0a0a0' }}>
+              재고: {product.stock}개 / 상태: {product.isAvailable ? '판매 중' : '판매 중지'}
+            </div>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div className="no-purchases">
+        <p>등록된 상품이 없습니다.</p>
+      </div>
+    )}
+  </div>
+);
+};
+
+if (loading) {
+return <div className="shop-loading">로딩 중...</div>;
+}
+
+return (
+<div className="shop-container">
+  <h1 className="shop-title">CCGG SHOP</h1>
+  
+  {/* 탭 메뉴 */}
+  <div className="shop-tabs">
+    <button 
+      className={`shop-tab ${activeTab === 'shop' ? 'active' : ''}`}
+      onClick={() => setActiveTab('shop')}
+    >
+      상점
+    </button>
+    <button 
+      className={`shop-tab ${activeTab === 'wallet' ? 'active' : ''}`}
+      onClick={() => setActiveTab('wallet')}
+    >
+      내 지갑
+    </button>
+    {isAdmin && (
+      <button 
+        className={`shop-tab ${activeTab === 'admin' ? 'active' : ''}`}
+        onClick={() => setActiveTab('admin')}
+      >
+        관리자
+      </button>
+    )}
+  </div>
+  
+  {/* 선택된 탭 내용 */}
+  {activeTab === 'shop' && (
+    <ShopTab 
+      products={products} 
+      userPoints={userPoints}
+      onProductSelect={handleProductSelect}
+    />
+  )}
+  
+  {activeTab === 'wallet' && (
+    <WalletTab 
+      userPoints={userPoints}
+      purchases={purchases}
+    />
+  )}
+  
+  {activeTab === 'admin' && isAdmin && (
+    <AdminTab 
+      newProduct={newProduct}
+      onInputChange={handleInputChange}
+      onAddProduct={handleAddProduct}
+      onDeleteProduct={handleDeleteProduct}
+      products={products}
+      fetchProducts={fetchProducts}
+    />
+  )}
+  
+  {/* 상품 상세 모달 */}
+  {selectedProduct && (
+    <div className="product-modal-overlay" onClick={closeModal}>
+      <div className="product-modal" onClick={e => e.stopPropagation()}>
+        <div className="product-modal-header">
+          <div className="product-modal-title">{selectedProduct.name}</div>
+          <button className="product-modal-close" onClick={closeModal}>&times;</button>
+        </div>
+        
+        <div className="product-modal-body">
+          {selectedProduct.imageUrl && (
+            <img 
+              src={selectedProduct.imageUrl} 
+              alt={selectedProduct.name} 
+              className="product-modal-img"
+            />
+          )}
+          
+          <div className="product-modal-price">
+            <span className="product-price-icon">🪙</span>
+            {selectedProduct.price} CGP
+          </div>
+          
+          <p className="product-modal-desc">{selectedProduct.description}</p>
+          
+          <p className="product-modal-stock">
+            재고: {selectedProduct.stock > 0 ? `${selectedProduct.stock}개 남음` : '품절'}
+          </p>
+          
+          <div className="product-modal-actions">
+            <button 
+              className="product-modal-buy"
+              onClick={() => handlePurchase(selectedProduct)}
+              disabled={isPurchasing || userPoints < selectedProduct.price || selectedProduct.stock <= 0}
+            >
+              {isPurchasing 
+                ? '처리 중...' 
+                : userPoints < selectedProduct.price 
+                  ? 'CGP 부족' 
+                  : selectedProduct.stock <= 0 
+                    ? '품절' 
+                    : '구매하기'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )}
+</div>
+);
 };
 
 export default Shop;
