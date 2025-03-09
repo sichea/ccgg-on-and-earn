@@ -28,6 +28,17 @@ const Shop = ({ telegramUser, isAdmin, walletTab = false }) => {
     isAvailable: true
   });
   
+  // EVM 주소 관련 상태 추가
+  const [evmAddress, setEvmAddress] = useState('');
+  const [isSavingAddress, setIsSavingAddress] = useState(false);
+  const [addressSaved, setAddressSaved] = useState(false);
+  const [addressError, setAddressError] = useState('');
+  
+  // 관리자용 사용자 EVM 주소 관련 상태
+  const [usersWithEvm, setUsersWithEvm] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [showEvmAddresses, setShowEvmAddresses] = useState(false);
+  
   const userId = telegramUser?.id?.toString() || '';
   
   // 상품 목록 가져오기 - useCallback으로 감싸기
@@ -116,6 +127,27 @@ const Shop = ({ telegramUser, isAdmin, walletTab = false }) => {
     
     fetchUserData();
   }, [userId, telegramUser, fetchProducts, fetchPurchases]);
+  
+  // EVM 주소 가져오기
+  useEffect(() => {
+    const fetchEvmAddress = async () => {
+      if (!userId) return;
+      
+      try {
+        const userRef = doc(db, 'users', userId);
+        const userDoc = await getDoc(userRef);
+        
+        if (userDoc.exists() && userDoc.data().evmAddress) {
+          setEvmAddress(userDoc.data().evmAddress);
+          setAddressSaved(true);
+        }
+      } catch (error) {
+        console.error('EVM 주소 가져오기 오류:', error);
+      }
+    };
+    
+    fetchEvmAddress();
+  }, [userId]);
   
   // 상품 선택 처리
   const handleProductSelect = (product) => {
@@ -295,6 +327,583 @@ const Shop = ({ telegramUser, isAdmin, walletTab = false }) => {
     }
   };
   
+  // EVM 주소 유효성 검사 함수
+  const isValidEvmAddress = (address) => {
+    // EVM 주소는 0x로 시작하는 42자리 16진수 문자열
+    return /^(0x)?[0-9a-fA-F]{40}$/.test(address);
+  };
+  
+  // EVM 주소 저장 함수
+  const saveEvmAddress = async () => {
+    setAddressError('');
+    setAddressSaved(false);
+    
+    if (!evmAddress.trim()) {
+      setAddressError('EVM 주소를 입력해주세요.');
+      return;
+    }
+    
+    // 주소 형식 검증
+    if (!isValidEvmAddress(evmAddress)) {
+      setAddressError('유효한 EVM 주소 형식이 아닙니다. 0x로 시작하는 42자리 주소를 입력해주세요.');
+      return;
+    }
+    
+    setIsSavingAddress(true);
+    
+    try {
+      // Firestore에 주소 저장
+      const userRef = doc(db, 'users', userId);
+      await updateDoc(userRef, {
+        evmAddress: evmAddress,
+        evmAddressUpdatedAt: Timestamp.now()
+      });
+      
+      setAddressSaved(true);
+      setTimeout(() => {
+        setAddressSaved(false);
+      }, 3000);
+    } catch (error) {
+      console.error('EVM 주소 저장 오류:', error);
+      setAddressError('주소 저장 중 오류가 발생했습니다.');
+    } finally {
+      setIsSavingAddress(false);
+    }
+  };
+  
+  // 사용자 EVM 주소 목록 가져오기 함수
+  const fetchUsersWithEvmAddress = async () => {
+    if (!isAdmin) return;
+    
+    setLoadingUsers(true);
+    try {
+      const usersRef = collection(db, 'users');
+      const querySnapshot = await getDocs(usersRef);
+      
+      const usersData = [];
+      querySnapshot.forEach(doc => {
+        const userData = doc.data();
+        if (userData.evmAddress) {
+          usersData.push({
+            id: doc.id,
+            telegramId: userData.telegramId || doc.id,
+            username: userData.username || '',
+            firstName: userData.firstName || '',
+            lastName: userData.lastName || '',
+            evmAddress: userData.evmAddress,
+            evmAddressUpdatedAt: userData.evmAddressUpdatedAt || null,
+            points: userData.points || 0
+          });
+        }
+      });
+      
+      usersData.sort((a, b) => {
+        const nameA = a.username || `${a.firstName} ${a.lastName}`.trim() || a.telegramId;
+        const nameB = b.username || `${b.firstName} ${b.lastName}`.trim() || b.telegramId;
+        return nameA.localeCompare(nameB);
+      });
+      
+      setUsersWithEvm(usersData);
+      
+      if (usersData.length > 0) {
+        setShowEvmAddresses(true);
+      }
+    } catch (error) {
+      console.error('사용자 EVM 주소 가져오기 오류:', error);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+  
+  // EVM 주소 복사 함수
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert('클립보드에 복사되었습니다!');
+    } catch (error) {
+      console.error('클립보드 복사 오류:', error);
+      alert('클립보드 복사에 실패했습니다.');
+    }
+  };
+  
+  // 탭 컴포넌트들 정의
+  const ShopTab = ({ products, userPoints, onProductSelect }) => {
+    // 판매 가능한 상품만 필터링
+    const availableProducts = products.filter(product => product.isAvailable);
+    
+    return (
+      <div>
+        <div className="wallet-info">
+          <div className="wallet-info-header">
+            <span className="balance-title">내 CGP</span>
+            <span className="wallet-balance">
+              <span className="wallet-balance-icon">🪙</span>
+              {userPoints}
+            </span>
+          </div>
+        </div>
+        
+        {availableProducts.length > 0 ? (
+          <div className="product-grid">
+            {availableProducts.map(product => (
+              <div 
+                key={product.id} 
+                className="product-card"
+                onClick={() => onProductSelect(product)}
+              >
+                <div className="product-image-container">
+                  {product.imageUrl ? (
+                    <img 
+                      src={product.imageUrl} 
+                      alt={product.name} 
+                      className="product-image" 
+                    />
+                  ) : (
+                    <div className="product-placeholder">🖼️</div>
+                  )}
+                </div>
+                
+                <div className="product-content">
+                  <div className="product-name">{product.name}</div>
+                  <div className="product-description">{product.description}</div>
+                  <div className="product-price">
+                    <span className="product-price-icon">🪙</span>
+                    {product.price}
+                  </div>
+                  
+                  <button 
+                    className="product-button"
+                    disabled={userPoints < product.price || product.stock <= 0}
+                  >
+                    {userPoints < product.price 
+                      ? 'CGP 부족' 
+                      : product.stock <= 0 
+                        ? '품절' 
+                        : '구매하기'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="no-purchases">
+            <p>현재 판매 중인 상품이 없습니다.</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const WalletTab = ({ userPoints, purchases }) => {
+    return (
+      <div>
+        <div className="wallet-info">
+          <div className="wallet-info-header">
+            <span className="balance-title">내 CGP</span>
+            <span className="wallet-balance">
+              <span className="wallet-balance-icon">🪙</span>
+              {userPoints}
+            </span>
+          </div>
+        </div>
+        
+        {/* EVM 주소 입력 섹션 추가 */}
+        <div className="evm-address-section">
+          <h2 className="section-title">EVM 지갑 주소</h2>
+          <p className="address-info">
+            이더리움, BSC, 폴리곤 등 EVM 호환 블록체인에서 사용할 수 있는 지갑 주소를 등록해주세요.
+          </p>
+          
+          <div className="address-input-container">
+            <input
+              type="text"
+              value={evmAddress}
+              onChange={(e) => setEvmAddress(e.target.value)}
+              placeholder="0x로 시작하는 EVM 주소 입력"
+              className="address-input"
+            />
+            <button 
+              onClick={saveEvmAddress}
+              disabled={isSavingAddress}
+              className="address-save-button"
+            >
+              {isSavingAddress ? "저장 중..." : "저장"}
+            </button>
+          </div>
+          
+          {addressError && <p className="address-error">{addressError}</p>}
+          {addressSaved && <p className="address-success">주소가 성공적으로 저장되었습니다!</p>}
+        </div>
+        
+        <h2 className="purchase-history-title">구매 내역</h2>
+        
+        {purchases && purchases.length > 0 ? (
+          <div className="purchase-history">
+            {purchases.map(purchase => (
+              <div key={purchase.id} className="purchase-item">
+                <div className="purchase-item-header">
+                  <span className="purchase-product-name">{purchase.productName}</span>
+                  <span className="purchase-date">
+                    {purchase.purchaseDate && 
+                      new Date(purchase.purchaseDate.toDate()).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="purchase-price">
+                  <span className="product-price-icon">🪙</span>
+                  {purchase.price} CGP
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="no-purchases">
+            <p>구매 내역이 없습니다.</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const AdminTab = ({ newProduct, onInputChange, onAddProduct, onDeleteProduct, products, fetchProducts }) => {
+    const [loadingAdmin, setLoadingAdmin] = useState(false);
+    const [editMode, setEditMode] = useState(false);
+    const [editProductId, setEditProductId] = useState(null);
+    
+    const handleEditProduct = (product) => {
+      // 수정 모드 활성화
+      setEditMode(true);
+      setEditProductId(product.id);
+      
+      // 폼에 기존 상품 정보 설정
+      onInputChange({
+        target: { name: 'name', value: product.name }
+      });
+      onInputChange({
+        target: { name: 'description', value: product.description }
+      });
+      onInputChange({
+        target: { name: 'price', value: product.price }
+      });
+      onInputChange({
+        target: { name: 'imageUrl', value: product.imageUrl }
+      });
+      onInputChange({
+        target: { name: 'stock', value: product.stock }
+      });
+      onInputChange({
+        target: { name: 'isAvailable', value: product.isAvailable }
+      });
+    };
+    
+    const handleUpdateProduct = async (e) => {
+      e.preventDefault();
+      
+      if (!editProductId) return;
+      
+      try {
+        setLoadingAdmin(true);
+        
+        // 상품 정보 업데이트
+        const productRef = doc(db, 'products', editProductId);
+        await updateDoc(productRef, {
+          ...newProduct,
+          updatedAt: Timestamp.now()
+        });
+        
+        alert('상품 정보가 업데이트되었습니다.');
+        
+        // 상품 목록 새로고침
+        await fetchProducts();
+        
+        // 수정 모드 초기화
+        setEditMode(false);
+        setEditProductId(null);
+        
+        // 폼 초기화
+        onInputChange({
+          target: { name: 'name', value: '' }
+        });
+        onInputChange({
+          target: { name: 'description', value: '' }
+        });
+        onInputChange({
+          target: { name: 'price', value: 0 }
+        });
+        onInputChange({
+          target: { name: 'imageUrl', value: '' }
+        });
+        onInputChange({
+          target: { name: 'stock', value: 0 }
+        });
+        onInputChange({
+          target: { name: 'isAvailable', value: true }
+        });
+      } catch (error) {
+        console.error('상품 수정 오류:', error);
+        alert('상품 정보 업데이트 중 오류가 발생했습니다.');
+      } finally {
+        setLoadingAdmin(false);
+      }
+    };
+    
+    const cancelEdit = () => {
+      setEditMode(false);
+      setEditProductId(null);
+      
+      // 폼 초기화
+      onInputChange({
+        target: { name: 'name', value: '' }
+      });
+      onInputChange({
+        target: { name: 'description', value: '' }
+      });
+      onInputChange({
+        target: { name: 'price', value: 0 }
+      });
+      onInputChange({
+        target: { name: 'imageUrl', value: '' }
+      });
+      onInputChange({
+        target: { name: 'stock', value: 0 }
+      });
+      onInputChange({
+        target: { name: 'isAvailable', value: true }
+      });
+    };
+    
+    return (
+      <div>
+        {/* 기존 상품 등록 폼 */}
+        <div className="admin-form-container">
+          <h3 className="admin-form-title">
+            {editMode ? '상품 수정' : '새 상품 등록'}
+          </h3>
+          
+          <form onSubmit={editMode ? handleUpdateProduct : onAddProduct}>
+            <div className="form-group">
+              <label className="form-label">상품명</label>
+              <input
+                type="text"
+                name="name"
+                value={newProduct.name}
+                onChange={onInputChange}
+                className="form-input"
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label className="form-label">상품 설명</label>
+              <textarea
+                name="description"
+                value={newProduct.description}
+                onChange={onInputChange}
+                className="form-textarea"
+                required
+              ></textarea>
+            </div>
+            
+            <div className="form-group">
+              <label className="form-label">가격 (CGP)</label>
+              <input
+                type="number"
+                name="price"
+                value={newProduct.price}
+                onChange={onInputChange}
+                className="form-input"
+                min="0"
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label className="form-label">이미지 URL</label>
+              <input
+                type="url"
+                name="imageUrl"
+                value={newProduct.imageUrl}
+                onChange={onInputChange}
+                className="form-input"
+                placeholder="https://example.com/image.jpg"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label className="form-label">재고 수량</label>
+              <input
+                type="number"
+                name="stock"
+                value={newProduct.stock}
+                onChange={onInputChange}
+                className="form-input"
+                min="0"
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label className="form-label">판매 가능 여부</label>
+              <select
+                name="isAvailable"
+                value={newProduct.isAvailable}
+                onChange={(e) => onInputChange({
+                  target: { name: 'isAvailable', value: e.target.value === 'true' }
+                })}
+                className="form-input"
+              >
+                <option value="true">판매 가능</option>
+                <option value="false">판매 중지</option>
+              </select>
+            </div>
+            
+            {editMode ? (
+              <div className="form-actions" style={{ display: 'flex', gap: '10px' }}>
+                <button 
+                  type="button" 
+                  onClick={cancelEdit}
+                  className="admin-cancel-button"
+                  style={{ flex: 1, backgroundColor: '#4a525e' }}
+                >
+                  취소
+                </button>
+                <button 
+                  type="submit" 
+                  className="admin-submit-button"
+                  disabled={loadingAdmin}
+                  style={{ flex: 1 }}
+                >
+                  {loadingAdmin ? '처리 중...' : '수정하기'}
+                </button>
+              </div>
+            ) : (
+              <button 
+                type="submit" 
+                className="admin-submit-button"
+                disabled={loadingAdmin}
+              >
+                {loadingAdmin ? '처리 중...' : '상품 등록'}
+              </button>
+            )}
+          </form>
+        </div>
+        
+        {/* EVM 주소 관리 섹션 추가 */}
+        <div className="admin-form-container" style={{ marginTop: '24px' }}>
+          <h3 className="admin-form-title">사용자 EVM 주소 관리</h3>
+          
+          <div className="admin-evm-actions">
+            <button 
+              onClick={fetchUsersWithEvmAddress}
+              disabled={loadingUsers}
+              className="admin-submit-button"
+              style={{ marginBottom: '16px' }}
+            >
+              {loadingUsers ? "불러오는 중..." : "EVM 주소 불러오기"}
+            </button>
+            
+            {usersWithEvm.length > 0 && (
+              <button 
+                onClick={() => setShowEvmAddresses(!showEvmAddresses)}
+                className="admin-submit-button"
+                style={{ marginLeft: '8px', marginBottom: '16px', backgroundColor: '#4a515e' }}
+              >
+                {showEvmAddresses ? "목록 숨기기" : "목록 표시하기"}
+              </button>
+            )}
+          </div>
+          
+          {showEvmAddresses && (
+            <div className="evm-users-list">
+              {usersWithEvm.length > 0 ? (
+                <>
+                  <div className="evm-users-header">
+                    <span className="evm-header-cell" style={{flex: 3}}>사용자</span>
+                    <span className="evm-header-cell" style={{flex: 5}}>EVM 주소</span>
+                    <span className="evm-header-cell" style={{flex: 2}}>업데이트 일시</span>
+                    <span className="evm-header-cell" style={{flex: 1}}>CGP</span>
+                    <span className="evm-header-cell" style={{flex: 1}}>액션</span>
+                  </div>
+                  
+                  {usersWithEvm.map(user => (
+                    <div key={user.id} className="evm-user-item">
+                      <span className="evm-user-name" style={{flex: 3}}>
+                        {user.username 
+                          ? `@${user.username}` 
+                          : (user.firstName 
+                              ? `${user.firstName} ${user.lastName || ''}`.trim() 
+                              : user.telegramId)}
+                      </span>
+                      <span className="evm-user-address" style={{flex: 5}}>
+                        {user.evmAddress}
+                      </span>
+                      <span className="evm-update-date" style={{flex: 2}}>
+                        {user.evmAddressUpdatedAt 
+                          ? new Date(user.evmAddressUpdatedAt.toDate()).toLocaleString() 
+                          : '-'}
+                      </span>
+                      <span className="evm-user-points" style={{flex: 1}}>
+                        {user.points}
+                      </span>
+                      <span className="evm-user-actions" style={{flex: 1}}>
+                        <button 
+                          onClick={() => copyToClipboard(user.evmAddress)}
+                          className="evm-copy-btn"
+                          title="주소 복사"
+                        >
+                          📋
+                        </button>
+                      </span>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <p className="no-evm-users">EVM 주소를 등록한 사용자가 없습니다.</p>
+              )}
+            </div>
+          )}
+        </div>
+        
+        <h2 className="purchase-history-title">등록된 상품 관리</h2>
+        {products.length > 0 ? (
+          <div className="purchase-history">
+            {products.map(product => (
+              <div key={product.id} className="purchase-item">
+                <div className="purchase-item-header">
+                  <span className="purchase-product-name">{product.name}</span>
+                  <div>
+                    <button 
+                      onClick={() => handleEditProduct(product)}
+                      style={{ marginRight: '8px', background: 'none', border: 'none', color: '#40a7e3', cursor: 'pointer' }}
+                    >
+                      ✏️
+                    </button>
+                    <button 
+                      onClick={() => onDeleteProduct(product.id)}
+                      style={{ background: 'none', border: 'none', color: '#e53935', cursor: 'pointer' }}
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+                <div className="purchase-price">
+                  <span className="product-price-icon">🪙</span>
+                  {product.price} CGP
+                </div>
+                <div style={{ marginTop: '8px', fontSize: '12px', color: '#a0a0a0' }}>
+                  재고: {product.stock}개 / 상태: {product.isAvailable ? '판매 중' : '판매 중지'}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="no-purchases">
+            <p>등록된 상품이 없습니다.</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+  
   if (loading) {
     return <div className="shop-loading">로딩 중...</div>;
   }
@@ -400,379 +1009,6 @@ const Shop = ({ telegramUser, isAdmin, walletTab = false }) => {
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// 탭 컴포넌트들 정의
-const ShopTab = ({ products, userPoints, onProductSelect }) => {
-  // 판매 가능한 상품만 필터링
-  const availableProducts = products.filter(product => product.isAvailable);
-  
-  return (
-    <div>
-      <div className="wallet-info">
-        <div className="wallet-info-header">
-          <span className="balance-title">내 CGP</span>
-          <span className="wallet-balance">
-            <span className="wallet-balance-icon">🪙</span>
-            {userPoints}
-          </span>
-        </div>
-      </div>
-      
-      {availableProducts.length > 0 ? (
-        <div className="product-grid">
-          {availableProducts.map(product => (
-            <div 
-              key={product.id} 
-              className="product-card"
-              onClick={() => onProductSelect(product)}
-            >
-              <div className="product-image-container">
-                {product.imageUrl ? (
-                  <img 
-                    src={product.imageUrl} 
-                    alt={product.name} 
-                    className="product-image" 
-                  />
-                ) : (
-                  <div className="product-placeholder">🖼️</div>
-                )}
-              </div>
-              
-              <div className="product-content">
-                <div className="product-name">{product.name}</div>
-                <div className="product-description">{product.description}</div>
-                <div className="product-price">
-                  <span className="product-price-icon">🪙</span>
-                  {product.price}
-                </div>
-                
-                <button 
-                  className="product-button"
-                  disabled={userPoints < product.price || product.stock <= 0}
-                >
-                  {userPoints < product.price 
-                    ? 'CGP 부족' 
-                    : product.stock <= 0 
-                      ? '품절' 
-                      : '구매하기'}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="no-purchases">
-          <p>현재 판매 중인 상품이 없습니다.</p>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const WalletTab = ({ userPoints, purchases }) => {
-  return (
-    <div>
-      <div className="wallet-info">
-        <div className="wallet-info-header">
-          <span className="balance-title">내 CGP</span>
-          <span className="wallet-balance">
-            <span className="wallet-balance-icon">🪙</span>
-            {userPoints}
-          </span>
-        </div>
-      </div>
-      
-      <h2 className="purchase-history-title">구매 내역</h2>
-      
-      {purchases && purchases.length > 0 ? (
-        <div className="purchase-history">
-          {purchases.map(purchase => (
-            <div key={purchase.id} className="purchase-item">
-              <div className="purchase-item-header">
-                <span className="purchase-product-name">{purchase.productName}</span>
-                <span className="purchase-date">
-                  {purchase.purchaseDate && 
-                    new Date(purchase.purchaseDate.toDate()).toLocaleDateString()}
-                </span>
-              </div>
-              <div className="purchase-price">
-                <span className="product-price-icon">🪙</span>
-                {purchase.price} CGP
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="no-purchases">
-          <p>구매 내역이 없습니다.</p>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const AdminTab = ({ newProduct, onInputChange, onAddProduct, onDeleteProduct, products, fetchProducts }) => {
-  const [loadingAdmin, setLoadingAdmin] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [editProductId, setEditProductId] = useState(null);
-  
-  const handleEditProduct = (product) => {
-    // 수정 모드 활성화
-    setEditMode(true);
-    setEditProductId(product.id);
-    
-    // 폼에 기존 상품 정보 설정
-    onInputChange({
-      target: { name: 'name', value: product.name }
-    });
-    onInputChange({
-      target: { name: 'description', value: product.description }
-    });
-    onInputChange({
-      target: { name: 'price', value: product.price }
-    });
-    onInputChange({
-      target: { name: 'imageUrl', value: product.imageUrl }
-    });
-    onInputChange({
-      target: { name: 'stock', value: product.stock }
-    });
-    onInputChange({
-      target: { name: 'isAvailable', value: product.isAvailable }
-    });
-  };
-  
-  const handleUpdateProduct = async (e) => {
-    e.preventDefault();
-    
-    if (!editProductId) return;
-    
-    try {
-      setLoadingAdmin(true);
-      
-      // 상품 정보 업데이트
-      const productRef = doc(db, 'products', editProductId);
-      await updateDoc(productRef, {
-        ...newProduct,
-        updatedAt: Timestamp.now()
-      });
-      
-      alert('상품 정보가 업데이트되었습니다.');
-      
-      // 상품 목록 새로고침
-      await fetchProducts();
-      
-      // 수정 모드 초기화
-      setEditMode(false);
-      setEditProductId(null);
-      
-      // 폼 초기화
-      onInputChange({
-        target: { name: 'name', value: '' }
-      });
-      onInputChange({
-        target: { name: 'description', value: '' }
-      });
-      onInputChange({
-        target: { name: 'price', value: 0 }
-      });
-      onInputChange({
-        target: { name: 'imageUrl', value: '' }
-      });
-      onInputChange({
-        target: { name: 'stock', value: 0 }
-      });
-      onInputChange({
-        target: { name: 'isAvailable', value: true }
-      });
-    } catch (error) {
-      console.error('상품 수정 오류:', error);
-      alert('상품 정보 업데이트 중 오류가 발생했습니다.');
-    } finally {
-      setLoadingAdmin(false);
-    }
-  };
-  
-  const cancelEdit = () => {
-    setEditMode(false);
-    setEditProductId(null);
-    
-    // 폼 초기화
-    onInputChange({
-      target: { name: 'name', value: '' }
-    });
-    onInputChange({
-      target: { name: 'description', value: '' }
-    });
-    onInputChange({
-      target: { name: 'price', value: 0 }
-    });
-    onInputChange({
-      target: { name: 'imageUrl', value: '' }
-    });
-    onInputChange({
-      target: { name: 'stock', value: 0 }
-    });
-    onInputChange({
-      target: { name: 'isAvailable', value: true }
-    });
-  };
-  
-  return (
-    <div>
-      <div className="admin-form-container">
-        <h3 className="admin-form-title">
-          {editMode ? '상품 수정' : '새 상품 등록'}
-        </h3>
-        
-        <form onSubmit={editMode ? handleUpdateProduct : onAddProduct}>
-          <div className="form-group">
-            <label className="form-label">상품명</label>
-            <input
-              type="text"
-              name="name"
-              value={newProduct.name}
-              onChange={onInputChange}
-              className="form-input"
-              required
-            />
-          </div>
-          
-          <div className="form-group">
-            <label className="form-label">상품 설명</label>
-            <textarea
-              name="description"
-              value={newProduct.description}
-              onChange={onInputChange}
-              className="form-textarea"
-              required
-            ></textarea>
-          </div>
-          
-          <div className="form-group">
-            <label className="form-label">가격 (CGP)</label>
-            <input
-              type="number"
-              name="price"
-              value={newProduct.price}
-              onChange={onInputChange}
-              className="form-input"
-              min="0"
-              required
-            />
-          </div>
-          
-          <div className="form-group">
-            <label className="form-label">이미지 URL</label>
-            <input
-              type="url"
-              name="imageUrl"
-              value={newProduct.imageUrl}
-              onChange={onInputChange}
-              className="form-input"
-              placeholder="https://example.com/image.jpg"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label className="form-label">재고 수량</label>
-            <input
-              type="number"
-              name="stock"
-              value={newProduct.stock}
-              onChange={onInputChange}
-              className="form-input"
-              min="0"
-              required
-            />
-          </div>
-          
-          <div className="form-group">
-            <label className="form-label">판매 가능 여부</label>
-            <select
-              name="isAvailable"
-              value={newProduct.isAvailable}
-              onChange={(e) => onInputChange({
-                target: { name: 'isAvailable', value: e.target.value === 'true' }
-              })}
-              className="form-input"
-            >
-              <option value="true">판매 가능</option>
-              <option value="false">판매 중지</option>
-            </select>
-          </div>
-          
-          {editMode ? (
-            <div className="form-actions" style={{ display: 'flex', gap: '10px' }}>
-              <button 
-                type="button" 
-                onClick={cancelEdit}
-                className="admin-cancel-button"
-                style={{ flex: 1, backgroundColor: '#4a525e' }}
-              >
-                취소
-              </button>
-              <button 
-                type="submit" 
-                className="admin-submit-button"
-                disabled={loadingAdmin}
-                style={{ flex: 1 }}
-              >
-                {loadingAdmin ? '처리 중...' : '수정하기'}
-              </button>
-            </div>
-          ) : (
-            <button 
-              type="submit" 
-              className="admin-submit-button"
-              disabled={loadingAdmin}
-            >
-              {loadingAdmin ? '처리 중...' : '상품 등록'}
-            </button>
-          )}
-        </form>
-      </div>
-      
-      <h2 className="purchase-history-title">등록된 상품 관리</h2>
-      {products.length > 0 ? (
-        <div className="purchase-history">
-          {products.map(product => (
-            <div key={product.id} className="purchase-item">
-              <div className="purchase-item-header">
-                <span className="purchase-product-name">{product.name}</span>
-                <div>
-                  <button 
-                    onClick={() => handleEditProduct(product)}
-                    style={{ marginRight: '8px', background: 'none', border: 'none', color: '#40a7e3', cursor: 'pointer' }}
-                  >
-                    ✏️
-                  </button>
-                  <button 
-                    onClick={() => onDeleteProduct(product.id)}
-                    style={{ background: 'none', border: 'none', color: '#e53935', cursor: 'pointer' }}
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </div>
-              <div className="purchase-price">
-                <span className="product-price-icon">🪙</span>
-                {product.price} CGP
-              </div>
-              <div style={{ marginTop: '8px', fontSize: '12px', color: '#a0a0a0' }}>
-                재고: {product.stock}개 / 상태: {product.isAvailable ? '판매 중' : '판매 중지'}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="no-purchases">
-          <p>등록된 상품이 없습니다.</p>
         </div>
       )}
     </div>

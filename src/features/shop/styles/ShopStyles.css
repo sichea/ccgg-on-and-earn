@@ -371,3 +371,142 @@
   height: 100px;
   color: #a0a0a0;
 }
+
+/* EVM 주소 입력 섹션 스타일 */
+.evm-address-section {
+  background-color: #232d42;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+  border: 1px solid #393f4a;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 12px;
+  color: white;
+}
+
+.address-info {
+  font-size: 14px;
+  color: #a0a0a0;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.address-input-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.address-input {
+  flex: 1;
+  background-color: #1c2333;
+  border: 1px solid #393f4a;
+  border-radius: 8px;
+  padding: 12px;
+  color: white;
+  font-size: 14px;
+  font-family: monospace;
+}
+
+.address-save-button {
+  background-color: #40a7e3;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0 20px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.address-save-button:disabled {
+  background-color: #3a4a63;
+  cursor: not-allowed;
+}
+
+.address-error {
+  color: #e53935;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.address-success {
+  color: #4CAF50;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+/* 관리자용 EVM 주소 목록 스타일 */
+.admin-evm-section {
+  margin-bottom: 24px;
+}
+
+.admin-evm-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.evm-users-list {
+  background-color: #1c2333;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #393f4a;
+}
+
+.evm-users-header {
+  display: flex;
+  padding: 12px;
+  background-color: #2a3654;
+  font-weight: bold;
+  font-size: 14px;
+  color: #a0a0a0;
+}
+
+.evm-user-item {
+  display: flex;
+  padding: 12px;
+  border-bottom: 1px solid #393f4a;
+  align-items: center;
+  font-size: 14px;
+}
+
+.evm-user-item:last-child {
+  border-bottom: none;
+}
+
+.evm-header-cell,
+.evm-user-name,
+.evm-user-address,
+.evm-update-date,
+.evm-user-points,
+.evm-user-actions {
+  padding: 0 8px;
+}
+
+.evm-user-address {
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.evm-copy-btn {
+  background: none;
+  border: none;
+  color: #40a7e3;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+}
+
+.evm-copy-btn:hover {
+  color: #5dc1f7;
+}
+
+.no-evm-users {
+  padding: 20px;
+  text-align: center;
+  color: #a0a0a0;
+}
