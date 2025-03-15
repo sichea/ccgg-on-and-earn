@@ -3,7 +3,6 @@
 
 // adsgram 초기화 함수
 export const initAdsgram = () => {
-  // adsgram SDK 로드
   return new Promise((resolve, reject) => {
     try {
       if (window.adsgram) {
@@ -12,18 +11,26 @@ export const initAdsgram = () => {
         return;
       }
       
+      // 스크립트 로드 방식 변경
       const script = document.createElement('script');
-      script.src = 'https://api.adsgram.ai/sdk/v1.js';
+      script.src = 'https://https://partner.adsgram.ai/platforms/7185/'; // URL 수정
       script.async = true;
       script.onload = () => {
-        // SDK 로드 후 초기화
-        window.adsgram.init({
-          appId: process.env.REACT_APP_ADSGRAM_APP_ID || 'YOUR_ADSGRAM_APP_ID',
-          debug: process.env.NODE_ENV === 'development'
-        });
-        
-        console.log('Adsgram SDK loaded and initialized');
-        resolve(window.adsgram);
+        // SDK 로드 후 초기화 - 약간의 지연 추가
+        setTimeout(() => {
+          try {
+            window.adsgram.init({
+              appId: process.env.REACT_APP_ADSGRAM_APP_ID || '7185',
+              debug: true // 문제 해결을 위해 디버그 모드 활성화
+            });
+            
+            console.log('Adsgram SDK loaded and initialized');
+            resolve(window.adsgram);
+          } catch (initError) {
+            console.error('Adsgram initialization error:', initError);
+            reject(initError);
+          }
+        }, 500);
       };
       script.onerror = (error) => {
         console.error('Failed to load Adsgram SDK:', error);
