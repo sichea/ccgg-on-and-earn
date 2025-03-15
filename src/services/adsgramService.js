@@ -12,7 +12,7 @@ export const initAdsgram = () => {
         console.log('Adsgram SDK already loaded');
         if (!AdController) {
           AdController = window.Adsgram.init({
-            blockId: process.env.REACT_APP_ADSGRAM_APP_ID || "7206" 
+            blockId: process.env.REACT_APP_ADSGRAM_PLACEMENT_ID || "8981" // 플랫폼ID가 아닌 블록ID 사용
           });
         }
         resolve(AdController);
@@ -26,7 +26,7 @@ export const initAdsgram = () => {
       script.onload = () => {
         try {
           AdController = window.Adsgram.init({
-            blockId: process.env.REACT_APP_ADSGRAM_APP_ID || "7206"
+            blockId: process.env.REACT_APP_ADSGRAM_PLACEMENT_ID || "8981" // 플랫폼ID가 아닌 블록ID 사용
           });
           
           console.log('Adsgram SDK loaded and initialized');
@@ -55,7 +55,7 @@ export const showRewardedAd = () => {
     try {
       if (!AdController && window.Adsgram) {
         AdController = window.Adsgram.init({
-          blockId: process.env.REACT_APP_ADSGRAM_APP_ID || "7206"
+          blockId: process.env.REACT_APP_ADSGRAM_PLACEMENT_ID || "8981" // 플랫폼ID가 아닌 블록ID 사용
         });
       }
       
