@@ -12,7 +12,7 @@ export const initAdsgram = () => {
         console.log('Adsgram SDK already loaded');
         if (!AdController) {
           AdController = window.Adsgram.init({
-            blockId: process.env.REACT_APP_ADSGRAM_APP_ID || "7185" 
+            blockId: process.env.REACT_APP_ADSGRAM_APP_ID || "7206" 
           });
         }
         resolve(AdController);
@@ -26,7 +26,7 @@ export const initAdsgram = () => {
       script.onload = () => {
         try {
           AdController = window.Adsgram.init({
-            blockId: process.env.REACT_APP_ADSGRAM_APP_ID || "7185"
+            blockId: process.env.REACT_APP_ADSGRAM_APP_ID || "7206"
           });
           
           console.log('Adsgram SDK loaded and initialized');
@@ -55,7 +55,7 @@ export const showRewardedAd = () => {
     try {
       if (!AdController && window.Adsgram) {
         AdController = window.Adsgram.init({
-          blockId: process.env.REACT_APP_ADSGRAM_APP_ID || "7185"
+          blockId: process.env.REACT_APP_ADSGRAM_APP_ID || "7206"
         });
       }
       
