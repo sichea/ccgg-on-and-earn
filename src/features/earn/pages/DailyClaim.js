@@ -4,7 +4,8 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../services/firebase';
 import ClaimTimer from '../components/ClaimTimer';
 import { getUserDocument, updateUserDocument, resetAdViewCountIfNeeded, processAdReward } from '../../../utils/userUtils';
-import { initAdsgram, showRewardedAd, checkAdAvailability } from '../../../services/adsgramService';
+// checkAdAvailability import 제거
+import { initAdsgram, showRewardedAd } from '../../../services/adsgramService';
 import '../styles/EarnStyles.css';
 import ccggLogo from "../../../assets/images/ccgg-logo.png";
 
@@ -23,7 +24,6 @@ const DailyClaim = ({ telegramUser, isAdmin }) => {
   const [isAdAvailable, setIsAdAvailable] = useState(false);
   const [isWatchingAd, setIsWatchingAd] = useState(false);
   const [adsInitialized, setAdsInitialized] = useState(false);
-  const [adCompleted, setAdCompleted] = useState(false); // 광고 시청 완료 상태
   
   // telegramUser 변경시 userId 업데이트
   useEffect(() => {
@@ -38,11 +38,10 @@ const DailyClaim = ({ telegramUser, isAdmin }) => {
       try {
         await initAdsgram();
         setAdsInitialized(true);
-        
-        const available = await checkAdAvailability();
-        setIsAdAvailable(available);
+        setIsAdAvailable(true); // SDK가 초기화되면 광고를 사용할 수 있다고 가정
       } catch (error) {
         console.error('광고 SDK 초기화 오류:', error);
+        setIsAdAvailable(false);
       }
     };
     
@@ -123,20 +122,14 @@ const DailyClaim = ({ telegramUser, isAdmin }) => {
     return () => clearInterval(interval);
   }, [lastClaimTime]);
   
-  // 광고 가용성 주기적 체크
+  // 광고 가용성 주기적 체크 - SDK 초기화 여부만 확인
   useEffect(() => {
     if (!adsInitialized) return;
     
-    const checkAds = async () => {
-      const available = await checkAdAvailability();
-      setIsAdAvailable(available);
-    };
+    // SDK가 초기화되면 광고를 사용할 수 있다고 가정
+    setIsAdAvailable(adsInitialized && adViewCount < maxAdViews);
     
-    checkAds();
-    const adCheckInterval = setInterval(checkAds, 60000); // 1분마다 확인
-    
-    return () => clearInterval(adCheckInterval);
-  }, [adsInitialized]);
+  }, [adsInitialized, adViewCount, maxAdViews]);
   
   // 일반 클레임 핸들러
   const handleClaim = async () => {
@@ -163,36 +156,32 @@ const DailyClaim = ({ telegramUser, isAdmin }) => {
     }
   };
   
-  // 광고 시청 핸들러
+  // 광고 시청 핸들러 - 공식 문서 방식으로 수정
   const handleWatchAd = async () => {
     if (isWatchingAd || adViewCount >= maxAdViews) return;
     
     setIsWatchingAd(true);
-    setAdCompleted(false);
     
     try {
       // 광고 표시
       const adResult = await showRewardedAd();
       
       if (adResult.success) {
-        console.log('광고 시청 완료, 보상 버튼 활성화');
-        setAdCompleted(true);
+        console.log('광고 시청 완료, 보상 처리');
+        // 광고 시청이 완료되면 바로 보상 처리
+        await handleClaimAdReward();
       }
     } catch (error) {
       console.error('광고 시청 오류:', error);
       alert('광고 시청 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsWatchingAd(false);
-      
-      // 광고 가용성 다시 확인
-      const available = await checkAdAvailability();
-      setIsAdAvailable(available);
     }
   };
   
   // 광고 보상 수령 핸들러
   const handleClaimAdReward = async () => {
-    if (!adCompleted || !userId) return;
+    if (!userId) return;
     
     try {
       const result = await processAdReward(userId);
@@ -200,7 +189,12 @@ const DailyClaim = ({ telegramUser, isAdmin }) => {
       if (result.success) {
         setUserPoints(prev => prev + 10); // 10 CGP 보상
         setAdViewCount(prev => prev + 1);
-        setAdCompleted(false);
+        
+        // 최대 시청 횟수 도달 시 광고 버튼 비활성화
+        if (adViewCount + 1 >= maxAdViews) {
+          setIsAdAvailable(false);
+        }
+        
         alert(`${result.message}`);
       } else {
         alert(result.message);
@@ -281,30 +275,20 @@ const DailyClaim = ({ telegramUser, isAdmin }) => {
             ></div>
           </div>
           
-          {adCompleted ? (
-            // 광고 시청 완료 시 보상 버튼 표시
-            <button
-              onClick={handleClaimAdReward}
-              className="claim-button"
-            >
-              보상 받기 (10 CGP)
-            </button>
-          ) : (
-            // 광고 시청 버튼
-            <button
-              className={`ad-button ${(!isAdAvailable || adViewCount >= maxAdViews || isWatchingAd) ? 'disabled' : ''}`}
-              onClick={handleWatchAd}
-              disabled={!isAdAvailable || adViewCount >= maxAdViews || isWatchingAd}
-            >
-              {isWatchingAd 
-                ? '광고 로딩 중...' 
-                : adViewCount >= maxAdViews 
-                  ? '오늘 최대 시청 횟수 도달' 
-                  : !isAdAvailable
-                    ? '현재 광고를 불러올 수 없습니다'
-                    : '광고 보고 CGP 받기'}
-            </button>
-          )}
+          {/* 광고 시청 버튼 - 공식 문서 방식으로 수정 */}
+          <button
+            className={`ad-button ${(!isAdAvailable || adViewCount >= maxAdViews || isWatchingAd) ? 'disabled' : ''}`}
+            onClick={handleWatchAd}
+            disabled={!isAdAvailable || adViewCount >= maxAdViews || isWatchingAd}
+          >
+            {isWatchingAd 
+              ? '광고 로딩 중...' 
+              : adViewCount >= maxAdViews 
+                ? '오늘 최대 시청 횟수 도달' 
+                : !isAdAvailable
+                  ? '현재 광고를 불러올 수 없습니다'
+                  : '광고 보고 CGP 받기'}
+          </button>
         </div>
       </div>
     </div>
