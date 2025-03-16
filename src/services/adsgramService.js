@@ -1,7 +1,4 @@
 // src/services/adsgramService.js
-// adsgram AI 광고 서비스 통합 모듈
-
-// Adsgram 컨트롤러 참조 (전역 상태)
 let AdController = null;
 
 // adsgram 초기화 함수
@@ -12,7 +9,7 @@ export const initAdsgram = () => {
         console.log('Adsgram SDK already loaded');
         if (!AdController) {
           AdController = window.Adsgram.init({
-            blockId: process.env.REACT_APP_ADSGRAM_PLACEMENT_ID || "8981" // 플랫폼ID가 아닌 블록ID 사용
+            blockId: process.env.REACT_APP_ADSGRAM_PLACEMENT_ID || "8981" 
           });
         }
         resolve(AdController);
@@ -26,7 +23,7 @@ export const initAdsgram = () => {
       script.onload = () => {
         try {
           AdController = window.Adsgram.init({
-            blockId: process.env.REACT_APP_ADSGRAM_PLACEMENT_ID || "8981" // 플랫폼ID가 아닌 블록ID 사용
+            blockId: process.env.REACT_APP_ADSGRAM_PLACEMENT_ID || "8981" 
           });
           
           console.log('Adsgram SDK loaded and initialized');
@@ -55,7 +52,7 @@ export const showRewardedAd = () => {
     try {
       if (!AdController && window.Adsgram) {
         AdController = window.Adsgram.init({
-          blockId: process.env.REACT_APP_ADSGRAM_PLACEMENT_ID || "8981" // 플랫폼ID가 아닌 블록ID 사용
+          blockId: process.env.REACT_APP_ADSGRAM_PLACEMENT_ID || "8981" 
         });
       }
       

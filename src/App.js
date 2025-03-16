@@ -86,7 +86,7 @@ function App() {
           setTelegramUser(user);
           
           // 관리자 확인
-          const adminIds = ['5172197798', 'ADMIN_TELEGRAM_ID_2']; 
+          const adminIds = ['5172197798', '5017989552']; 
           setIsAdmin(adminIds.includes(String(user.id)));
         } else {
           // 개발 환경에서 테스트용 모의 사용자 설정
